@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Igneus V2 ET4 — part generator</title>
+<style>
+  :root { --bg: #111214; --panel: #1b1d21; --panel2: #23262b; --line: #2c2f35; --text: #e8e9eb; --muted: #9aa0a8; --accent: #f2a43a; --err: #ef6b6b; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 14.5px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { display: flex; flex-direction: column; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 12px 16px;
+    border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  h1 span { color: var(--muted); font-weight: 400; }
+  nav { display: flex; gap: 16px; margin-left: auto; }
+  main { flex: 1; display: grid; grid-template-columns: 360px minmax(0, 1fr); min-height: 0; }
+  @media (max-width: 820px) { main { grid-template-columns: 1fr; grid-template-rows: auto 60vh; } }
+  form { overflow-y: auto; padding: 14px 16px 24px; border-right: 1px solid var(--line); background: var(--panel); }
+  fieldset { border: 0; padding: 0; margin: 0 0 16px; }
+  legend { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+  .field { display: grid; gap: 3px; margin-bottom: 10px; }
+  .field label { font-size: 13.5px; }
+  .field .row { display: grid; grid-template-columns: 1fr 84px; gap: 8px; align-items: center; }
+  .field.check { grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  input[type=number], select { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 7px; padding: 6px 8px; font: inherit; }
+  input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
+  .actions { position: sticky; bottom: -24px; background: var(--panel); padding: 12px 0 0; display: flex; gap: 8px; flex-wrap: wrap; }
+  button { border-radius: 8px; padding: 9px 16px; font: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--panel2); color: var(--text); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #1a1205; font-weight: 600; }
+  button:disabled { opacity: .55; cursor: default; }
+  .status { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 1.4em; }
+  .status.err { color: var(--err); }
+  .stage { position: relative; min-height: 0; background: #d5d8dc; }
+  .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .hud { position: absolute; left: 12px; top: 10px; font-size: 12.5px; background: rgba(17,18,20,.8); padding: 4px 9px; border-radius: 6px; }
+  .hud:empty { display: none; }
+  .note { font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header>
+  <h1>Igneus V2 for the Anet ET4 <span>· part generator</span></h1>
+  <nav><a href="../">Home</a><a href="../visualizer/">3D visualizer</a><a href="https://github.com/abarriuso/igneus-v2-et4-4010-led">GitHub</a></nav>
+</header>
+<main>
+  <form id="form" autocomplete="off">
+    <div id="fields">Loading parameters…</div>
+    <div class="actions">
+      <button type="submit" class="primary" id="go" disabled>Generate</button>
+      <button type="button" id="dl" disabled>Download STL</button>
+      <button type="button" id="reset">Defaults</button>
+    </div>
+    <div class="status" id="status"></div>
+    <p class="note">Enter your measurements and generate the part: OpenSCAD runs in your browser, so the first build
+      downloads it (about 11 MB) and each build takes a few seconds. Remix of
+      <a href="https://www.thingiverse.com/thing:4178590">IGNEUS V2 by Locos3D</a>,
+      <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>.</p>
+  </form>
+  <div class="stage" id="stage"><div class="hud" id="hud"></div></div>
+</main>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+const $ = (s) => document.querySelector(s);
+const SOURCE = '../cad-studio/parts/customizer.scad';
+
+// Which parameter groups matter for each part (the others are hidden)
+const GROUPS_FOR = {
+  adapter_4010: ['Part', '4010 blower'], adapter_4010_flat: ['Part', '4010 blower'],
+  led_mount: ['Part', 'LED strip'], duct_4010_led: ['Part', '4010 blower', 'LED strip'],
+  duct_4010_led_flat: ['Part', '4010 blower', 'LED strip'], fan_adapter_2510_30: ['Part', '2510 fan adapter'],
+};
+const FILE_NAMES = {
+  adapter_4010: 'Adapter_4010', adapter_4010_flat: 'Adapter_4010_flat', led_mount: 'LED_mount',
+  duct_4010_led: 'Duct_4010_LED', duct_4010_led_flat: 'Duct_4010_LED_flat', fan_adapter_2510_30: 'Fan_adapter_2510_30mm',
+};
+
+// ---------- read the OpenSCAD Customizer parameters straight from customizer.scad ----------
+function parseCustomizer(src) {
+  const params = [];
+  let group = '', desc = '';
+  for (const raw of src.split('\n')) {
+    const line = raw.trim();
+    const g = line.match(/^\/\*\s*\[(.+?)\]\s*\*\/$/);
+    if (g) { group = g[1]; desc = ''; if (group === 'Hidden') break; continue; }
+    if (!group) continue;
+    const c = line.match(/^\/\/\s*(.+)$/);
+    if (c) { desc = c[1]; continue; }
+    const a = line.match(/^(\w+)\s*=\s*(.+?);\s*(?:\/\/\s*\[(.*)\])?\s*$/);
+    if (!a) { desc = ''; continue; }
+    const [, name, value, spec] = a;
+    const p = { name, group: group.split('—')[0].trim(), label: desc || name, def: value };
+    if (value === 'true' || value === 'false') { p.type = 'bool'; p.def = value === 'true'; }
+    else if (/^".*"$/.test(value)) { p.type = 'string'; p.def = value.slice(1, -1); }
+    else if (!isNaN(+value)) { p.type = 'number'; p.def = +value; }
+    else { desc = ''; continue; }   // vectors etc. are not exposed
+    if (spec !== undefined) {
+      const nums = spec.split(':').map(Number);
+      if (!spec.includes(',') && nums.length >= 2 && nums.every((n) => !isNaN(n))) {
+        if (nums.length === 3) [p.min, p.step, p.max] = nums; else [p.min, p.max] = nums;
+      } else {
+        p.options = spec.split(',').map((o) => { const [v, ...l] = o.trim().split(':'); return { v: v.trim(), l: (l.join(':') || v).trim() }; });
+      }
+    }
+    params.push(p); desc = '';
+  }
+  return params;
+}
+
+let params = [];
+const values = {};
+function renderForm() {
+  const box = $('#fields'); box.innerHTML = '';
+  const groups = [...new Set(params.map((p) => p.group))];
+  for (const g of groups) {
+    const fs = document.createElement('fieldset'); fs.dataset.group = g;
+    fs.innerHTML = `<legend>${g}</legend>`;
+    for (const p of params.filter((q) => q.group === g)) {
+      const f = document.createElement('div'); f.className = 'field';
+      const id = 'p_' + p.name;
+      if (p.type === 'bool') {
+        f.classList.add('check');
+        f.innerHTML = `<input type="checkbox" id="${id}"><label for="${id}">${p.label}</label>`;
+        const el = f.querySelector('input'); el.checked = values[p.name];
+        el.addEventListener('change', () => { values[p.name] = el.checked; dirty(); });
+      } else if (p.options) {
+        f.innerHTML = `<label for="${id}">${p.label}</label><select id="${id}">${p.options.map((o) => `<option value="${o.v}">${o.l}</option>`).join('')}</select>`;
+        const el = f.querySelector('select'); el.value = values[p.name];
+        el.addEventListener('change', () => { values[p.name] = p.type === 'number' ? +el.value : el.value; if (p.name === 'part') showGroups(); dirty(); });
+      } else {
+        const rng = p.min !== undefined ? `<input type="range" min="${p.min}" max="${p.max}" step="${p.step ?? 'any'}">` : '<span></span>';
+        f.innerHTML = `<label for="${id}">${p.label}</label><div class="row">${rng}<input type="number" id="${id}" step="${p.step ?? 'any'}"></div>`;
+        const num = f.querySelector('input[type=number]'), r = f.querySelector('input[type=range]');
+        num.value = values[p.name]; if (r) r.value = values[p.name];
+        num.addEventListener('input', () => { if (num.value === '') return; values[p.name] = +num.value; if (r) r.value = num.value; dirty(); });
+        if (r) r.addEventListener('input', () => { values[p.name] = +r.value; num.value = r.value; dirty(); });
+      }
+      fs.appendChild(f);
+    }
+    box.appendChild(fs);
+  }
+  showGroups();
+}
+function showGroups() {
+  const keep = GROUPS_FOR[values.part] || null;
+  document.querySelectorAll('fieldset').forEach((fs) => { fs.hidden = keep ? !keep.includes(fs.dataset.group) : false; });
+  // the side does not apply to the (symmetric) fan adapter
+  const side = $('#p_side')?.closest('.field'); if (side) side.hidden = values.part === 'fan_adapter_2510_30';
+}
+function defaults() { for (const p of params) values[p.name] = p.def; }
+function scadValue(p, v) { return p.type === 'string' ? JSON.stringify(v) : String(v); }
+
+// ---------- 3D preview ----------
+const stage = $('#stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+stage.prepend(renderer.domElement);
+THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xd5d8dc);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 5000); camera.up.set(0, 0, 1);
+const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445066, 1.2));
+const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(-0.6, 0.8, 1); key.target.position.set(0, 0, -1);
+camera.add(key, key.target); scene.add(camera);
+const grid = new THREE.GridHelper(200, 20, 0x8e949b, 0xb4b9bf); grid.rotation.x = Math.PI / 2; scene.add(grid);
+let mesh;
+function show(buf) {
+  const geom = new STLLoader().parse(buf);
+  geom.computeVertexNormals(); geom.computeBoundingBox();
+  const bb = geom.boundingBox, c = bb.getCenter(new THREE.Vector3()), size = bb.getSize(new THREE.Vector3());
+  geom.translate(-c.x, -c.y, -bb.min.z);   // centred on the grid, resting on it
+  if (mesh) { scene.remove(mesh); mesh.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); }
+  mesh = new THREE.Group();
+  mesh.add(new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ color: 0x2a2b2e, roughness: 0.55 })));
+  mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geom, 28), new THREE.LineBasicMaterial({ color: 0x8a9099, transparent: true, opacity: 0.7 })));
+  scene.add(mesh);
+  const r = size.length() / 2, d = r / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.1;
+  controls.target.set(0, 0, size.z / 2);
+  camera.position.set(d * 0.55, -d * 0.7, size.z / 2 + d * 0.45); controls.update();
+  $('#hud').textContent = `${size.x.toFixed(1)} × ${size.y.toFixed(1)} × ${size.z.toFixed(1)} mm`;
+}
+new ResizeObserver(() => {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / Math.max(h, 1); camera.updateProjectionMatrix();
+}).observe(stage);
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+
+// ---------- build ----------
+const worker = new Worker('worker.js', { type: 'module' });
+let lastStl = null, lastName = '', job = 0;
+function status(msg, err = false) { const s = $('#status'); s.textContent = msg; s.classList.toggle('err', err); }
+function dirty() { $('#dl').disabled = true; status('Changed: generate again to update the part.'); }
+function build() {
+  const id = ++job, t0 = performance.now();
+  $('#go').disabled = true; $('#dl').disabled = true;
+  status(job === 1 ? 'Loading OpenSCAD and building… (the first time takes a bit longer)' : 'Building…');
+  const defines = Object.fromEntries(params.map((p) => [p.name, scadValue(p, values[p.name])]));
+  worker.postMessage({ id, defines });
+  worker.onmessage = (e) => {
+    if (e.data.id !== job) return;
+    $('#go').disabled = false;
+    if (!e.data.ok) { status('Build failed: ' + e.data.error, true); console.log(e.data.log.join('\n')); return; }
+    const errors = e.data.log.filter((l) => /ERROR/.test(l));
+    lastStl = e.data.stl;
+    const sideTxt = values.part === 'fan_adapter_2510_30' ? '' : '_' + values.side;
+    lastName = `${FILE_NAMES[values.part] || values.part}${sideTxt}_custom.stl`;
+    show(lastStl.buffer);
+    $('#dl').disabled = false;
+    status(errors.length ? 'Built with warnings: ' + errors[0] : `Built in ${((performance.now() - t0) / 1000).toFixed(1)} s.`, errors.length > 0);
+  };
+}
+$('#form').addEventListener('submit', (e) => { e.preventDefault(); build(); });
+$('#dl').addEventListener('click', () => {
+  if (!lastStl) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lastStl], { type: 'model/stl' }));
+  a.download = lastName; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+$('#reset').addEventListener('click', () => { defaults(); renderForm(); dirty(); });
+
+const src = await (await fetch(SOURCE)).text();
+params = parseCustomizer(src);
+defaults();
+const q = new URLSearchParams(location.search);   // e.g. ?part=led_mount&side=left
+for (const p of params) if (q.has(p.name)) values[p.name] = p.type === 'number' ? +q.get(p.name) : p.type === 'bool' ? q.get(p.name) === 'true' : q.get(p.name);
+renderForm();
+$('#go').disabled = false;
+build();
+</script>
+</body>
+</html>

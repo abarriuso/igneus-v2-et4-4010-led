@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Igneus V2 for the Anet ET4 — 4010 blowers and LED light</title>
+<meta name="description" content="Remix of IGNEUS V2 by Locos3D for the Anet ET4: 4010 blower adapters (normal and flat), LED mount, one-piece ducts and a 2510 fan adapter.">
+<style>
+  :root { --bg: #111214; --panel: #1b1d21; --line: #2c2f35; --text: #e8e9eb; --muted: #9aa0a8; --accent: #f2a43a; }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body { margin: 0; color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 32px 16px 48px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .eyebrow { font: 12px/1.4 ui-monospace, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-size: clamp(26px, 4.4vw, 40px); line-height: 1.15; margin: 6px 0 10px; }
+  h2 { font-size: 22px; margin: 44px 0 14px; }
+  h3 { font-size: 17px; margin: 0 0 8px; }
+  p { margin: 0 0 12px; }
+  .lead { color: var(--muted); max-width: 720px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 8px; }
+  .btn { display: inline-block; padding: 9px 16px; border-radius: 9px; border: 1px solid var(--line); color: var(--text); background: var(--panel); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #1a1205; font-weight: 600; }
+  .btn:hover { text-decoration: none; filter: brightness(1.08); }
+  .viz { margin-top: 26px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .viz-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .tabs { display: flex; gap: 6px; }
+  .tabs button { background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; font: inherit; cursor: pointer; }
+  .tabs button.on { background: var(--accent); border-color: var(--accent); color: #1a1205; font-weight: 600; }
+  .viz-cap { color: var(--muted); font-size: 14px; flex: 1 1 240px; }
+  .viz iframe { display: block; width: 100%; height: min(78vh, 720px); min-height: 440px; border: 0; background: #16181b; }
+  .real { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: 22px; align-items: center; }
+  .real img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; }
+  @media (max-width: 760px) { .real { grid-template-columns: 1fr; } }
+  .shot { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); background: #000; }
+  ul { padding-left: 20px; margin: 0; }
+  li { margin: 6px 0; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .card img { width: 100%; height: auto; border-radius: 8px; display: block; margin-bottom: 10px; background: #d5d8dc; }
+  .parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .part img { aspect-ratio: 4 / 3; object-fit: contain; }
+  .part .dl { font-size: 14px; }
+  .part .how { color: var(--muted); font-size: 13.5px; margin: 4px 0 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; }
+  code { font: 13.5px ui-monospace, Consolas, monospace; background: var(--panel); padding: 1px 5px; border-radius: 5px; }
+  footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Anet ET4 · Igneus V2 (remix of Locos3D) · E3D V6</div>
+  <h1>Igneus V2 for the Anet ET4 — 4010 blowers and LED light</h1>
+  <p class="lead">Remix of <a href="https://www.thingiverse.com/thing:4178590">IGNEUS V2 - E3D V6/VOLCANO - ANET ET4 / ET4 PRO / ET4X / ET5</a>
+    by Locos3D, licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>, like the original.</p>
+  <div class="actions">
+    <a class="btn primary" href="visualizer/">Open the 3D visualizer</a>
+    <a class="btn primary" href="generator/">Customize and download</a>
+    <a class="btn" href="#downloads">Downloads</a>
+    <a class="btn" href="https://github.com/abarriuso/igneus-v2-et4-4010-led">GitHub</a>
+  </div>
+
+  <div class="viz">
+    <div class="viz-bar">
+      <div class="tabs" role="tablist"><button role="tab" data-v="normal" class="on">Normal</button><button role="tab" data-v="flat">Flat</button></div>
+      <div class="viz-cap" id="vizcap">Drag to rotate, scroll or pinch to zoom. Replay the assembly or switch the fans and LEDs on and off.</div>
+      <a href="visualizer/" id="vizfull">Full screen ↗</a>
+    </div>
+    <iframe id="viz" src="visualizer/normal.html?embed" title="Interactive 3D assembly" allow="fullscreen"></iframe>
+  </div>
+
+  <h2>Built and running</h2>
+  <div class="real">
+    <img src="screenshots/real_build.jpg" alt="The remix printed and running on an Anet ET4, with the LEDs lighting the nozzle" loading="lazy">
+    <p class="lead">Printed and running on an Anet ET4: the 4010 blowers on the original ducts, the 2510 hotend fan on the front clamp
+      and the LEDs lighting the nozzle.</p>
+  </div>
+
+  <h2>What this remix adds</h2>
+  <ul>
+    <li><strong>4010 adapter</strong> to fit the Ender 3's stock 4010 blowers to the original 5015 ducts, in two versions:
+      <strong>normal</strong> (the blower in the original position, held by its mounting screw) and <strong>flat</strong>
+      (the blower on top with its intake facing the front, like the hotend fan; the adapter is only 15 mm tall, so the blowers sit low).</li>
+    <li><strong>LED mount</strong> that fits on the inside of each original duct, held with a zip tie, and aims two LEDs of a
+      24 V LED strip with one lensed LED per segment, like the light strips sold for the Bambu Lab A1, at the nozzle.</li>
+    <li><strong>One-piece duct</strong> with the 4010 adapter and the LED channel built in, in both versions, if you prefer to reprint the ducts.</li>
+    <li><strong>25 → 30 mm fan adapter</strong> so the 2510 hotend fan of an Anycubic Kobra X fits Locos3D's 30 mm fan clamp.</li>
+  </ul>
+
+  <div class="two" style="margin-top: 22px">
+    <div class="card"><img src="screenshots/assembly_normal.png" alt="Normal version, assembled" loading="lazy"><h3>Normal</h3></div>
+    <div class="card"><img src="screenshots/assembly_flat.png" alt="Flat version, assembled" loading="lazy"><h3>Flat</h3></div>
+  </div>
+
+  <h2 id="downloads">Downloads</h2>
+  <p class="lead">All files are oriented for printing. Right and left parts are mirror images. To enter your own
+    measurements (fan, LED strip, clearances) use the <a href="generator/">part generator</a>.</p>
+  <div class="parts">
+    <div class="card part"><img src="screenshots/part_adapter_4010.png" alt="4010 adapter, normal" loading="lazy">
+      <h3>4010 adapter, normal</h3>
+      <div class="dl"><a href="cad-studio/export/Adapter_4010_right.stl" download>Right</a> · <a href="cad-studio/export/Adapter_4010_left.stl" download>Left</a></div>
+      <p class="how">Nozzle down, supports from the build plate.</p></div>
+    <div class="card part"><img src="screenshots/part_adapter_4010_flat.png" alt="4010 adapter, flat" loading="lazy">
+      <h3>4010 adapter, flat</h3>
+      <div class="dl"><a href="cad-studio/export/Adapter_4010_flat_right.stl" download>Right</a> · <a href="cad-studio/export/Adapter_4010_flat_left.stl" download>Left</a></div>
+      <p class="how">Upside down, no supports.</p></div>
+    <div class="card part"><img src="screenshots/part_led_mount.png" alt="LED mount" loading="lazy">
+      <h3>LED mount for the original duct</h3>
+      <div class="dl"><a href="cad-studio/export/LED_mount_right.stl" download>Right</a> · <a href="cad-studio/export/LED_mount_left.stl" download>Left</a></div>
+      <p class="how">No supports.</p></div>
+    <div class="card part"><img src="screenshots/part_duct_4010_led.png" alt="One-piece duct, normal" loading="lazy">
+      <h3>One-piece duct with LED channel, normal</h3>
+      <div class="dl"><a href="cad-studio/export/Duct_4010_LED_right.stl" download>Right</a> · <a href="cad-studio/export/Duct_4010_LED_left.stl" download>Left</a></div>
+      <p class="how">On its flat back face.</p></div>
+    <div class="card part"><img src="screenshots/part_duct_4010_led_flat.png" alt="One-piece duct, flat" loading="lazy">
+      <h3>One-piece duct with LED channel, flat</h3>
+      <div class="dl"><a href="cad-studio/export/Duct_4010_LED_flat_right.stl" download>Right</a> · <a href="cad-studio/export/Duct_4010_LED_flat_left.stl" download>Left</a></div>
+      <p class="how">On its flat back face, supports under the front wall of the fan cradle.</p></div>
+    <div class="card part"><img src="screenshots/part_fan_adapter_2510_30.png" alt="2510 to 30 mm fan adapter" loading="lazy">
+      <h3>2510 fan to the 30 mm fan clamp</h3>
+      <div class="dl"><a href="cad-studio/export/Fan_adapter_2510_30mm.stl" download>Download</a></div>
+      <p class="how">Fan side down, no supports.</p></div>
+  </div>
+
+  <h2>Assembly notes</h2>
+  <ul>
+    <li><strong>LEDs</strong>: on this kind of strip each LED is its own segment. Cut it at the marks, two LEDs per side, and wire both pieces in parallel to 24 V.</li>
+    <li><strong>2510 fan adapter</strong>: it is held by the clamp's own two M3 screws, which need to be about <strong>4 mm longer</strong>, and the fan is fixed with 4 self-tapping M2.5 screws.</li>
+  </ul>
+  <img class="shot" src="screenshots/fan_adapter_2510_30.png" alt="2510 fan adapter" loading="lazy" style="margin-top: 14px; background: #fff">
+
+  <h2>Original parts</h2>
+  <p>Everything else is Locos3D's original Igneus V2: <strong><a href="https://www.thingiverse.com/thing:4178590">download it from Thingiverse</a></strong>
+    (<a href="https://cults3d.com/en/3d-model/various/igneus-mounting-guide-on-anet-et4-et5">assembly guide</a>). This build uses:</p>
+  <table>
+    <tr><th>File</th><th>Qty</th><th>What it is</th></tr>
+    <tr><td><code>Igneus_Version1_Rev.3.stl</code></td><td>1</td><td>Body for the E3D V6</td></tr>
+    <tr><td><code>Abrazadera_Adapter_Fan_30mm.stl</code></td><td>1</td><td>Front clamp with the 30 mm fan mount</td></tr>
+    <tr><td><code>Tobera_5015_V2.stl</code></td><td>2</td><td>5015 duct, one of them mirrored for the left side (not needed with the one-piece ducts)</td></tr>
+  </table>
+
+  <footer>
+    Remix of IGNEUS V2 by <a href="https://www.thingiverse.com/thing:4178590">Locos3D</a>, shared under
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>: credit Locos3D, non-commercial use only,
+    and share any derivative under the same license.
+  </footer>
+</div>
+<script>
+  // switch the embedded visualizer between the two versions
+  document.querySelector('.viz .tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    const v = b.dataset.v;
+    document.getElementById('viz').src = `visualizer/${v}.html?embed`;
+    document.getElementById('vizfull').href = `visualizer/#${v}`;
+    document.querySelectorAll('.viz .tabs button').forEach((x) => x.classList.toggle('on', x === b));
+  });
+</script>
+</body>
+</html>

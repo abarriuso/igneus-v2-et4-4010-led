@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAD Studio</title>
+<style>
+  :root {
+    --bg: #14161a; --panel: #1b1e24; --panel2: #232730; --line: #2e333c;
+    --text: #e6e8eb; --muted: #949ba6; --accent: #f59e0b;
+    --ok: #22c55e; --err: #ef4444; --busy: #3b82f6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  body { display: flex; }
+  aside { width: 232px; flex: none; background: var(--panel); border-right: 1px solid var(--line);
+    overflow-y: auto; padding: 10px 12px 16px; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  h1 { font-size: 15px; margin: 0; letter-spacing: .3px; }
+  h1 b { color: var(--accent); }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted);
+    margin: 14px 0 6px; font-weight: 600; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li.item { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-radius: 6px; cursor: pointer; }
+  li.item:hover { background: var(--panel2); }
+  li.item.sel { background: var(--panel2); outline: 1px solid var(--line); }
+  li.item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  li.item .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  li.item a, li.item button.icon { color: var(--muted); text-decoration: none; background: none; border: 0;
+    padding: 0 2px; cursor: pointer; font-size: 13px; }
+  li.item a:hover, li.item button.icon:hover { color: var(--text); }
+  .badge { font-size: 10px; padding: 1px 5px; border-radius: 9px; background: var(--line); color: var(--muted); }
+  .badge.ok { background: rgba(34,197,94,.15); color: var(--ok); }
+  .badge.error { background: rgba(239,68,68,.18); color: var(--err); }
+  .badge.building { background: rgba(59,130,246,.18); color: var(--busy); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--err); display: inline-block; }
+  .dot.on { background: var(--ok); }
+  .hint { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  code { background: var(--panel2); padding: 0 4px; border-radius: 4px; }
+  label { display: flex; align-items: center; gap: 6px; padding: 2px 0; cursor: pointer; }
+  input[type=checkbox] { accent-color: var(--accent); margin: 0; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .btns { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  button { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px;
+    padding: 4px 8px; font: inherit; cursor: pointer; }
+  button:hover { border-color: #47505d; }
+  button.on { background: var(--accent); color: #1a1205; border-color: var(--accent); }
+  main { flex: 1; position: relative; min-width: 0; }
+  canvas#c { display: block; width: 100%; height: 100%; }
+  .labels { position: absolute; inset: 0; pointer-events: none; }
+  .mlabel { background: rgba(10,12,15,.85); color: #fff; padding: 2px 6px; border-radius: 4px;
+    font-size: 12px; border: 1px solid var(--accent); white-space: nowrap; }
+  #hud { position: absolute; top: 10px; left: 12px; max-width: calc(100% - 24px); pointer-events: none;
+    font-size: 12px; color: var(--muted); background: rgba(20,22,26,.78); padding: 4px 8px; border-radius: 6px; }
+  #hud:empty { display: none; }
+  #hud b { color: var(--text); font-size: 13px; }
+  #toast { position: absolute; top: 10px; right: 12px; padding: 6px 10px; border-radius: 6px;
+    background: var(--panel2); border: 1px solid var(--line); opacity: 0; transition: opacity .25s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+  #toast.error { border-color: var(--err); color: #fecaca; }
+  #logPanel { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(20,22,26,.96);
+    border-top: 1px solid var(--line); max-height: 40%; display: flex; flex-direction: column; }
+  #logHead { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; cursor: pointer;
+    color: var(--muted); font-size: 12px; }
+  #logHead button { padding: 0 8px; }
+  #log { margin: 0; padding: 4px 10px 10px; overflow: auto; font: 12px/1.35 ui-monospace, Consolas, monospace;
+    white-space: pre-wrap; display: none; color: #c9cdd3; }
+  #logPanel.open #log { display: block; }
+  #log .e { color: #fca5a5; } #log .w { color: #fcd34d; } #log .echo { color: #93c5fd; }
+  main.measuring canvas { cursor: crosshair; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<aside>
+  <header><h1>CAD <b>Studio</b></h1><span id="conn" class="dot" title="Connection to the server"></span></header>
+
+  <h2>Parts</h2>
+  <div class="btns" id="variant" title="Parts tagged '// variant:' only show in their variant">
+    <button data-variant="normal">Normal</button><button data-variant="flat">Flat</button>
+  </div>
+  <ul id="parts"></ul>
+  <p class="hint" id="noparts">Waiting for parts in <code>parts/</code>…</p>
+
+  <h2>References</h2>
+  <ul id="refs"></ul>
+  <p class="hint" id="norefs">Drop STLs into <code>refs/</code> and they show up here as ghosts.</p>
+  <label class="hint" style="display:block">Reference opacity
+    <input type="range" id="refOpacity" min="5" max="100" value="35"></label>
+
+  <h2>View</h2>
+  <div class="btns">
+    <button data-view="iso">Iso</button><button data-view="front">Front</button>
+    <button data-view="right">Side</button><button data-view="top">Top</button>
+    <button data-view="bottom">Bottom</button><button id="fit">Fit</button>
+  </div>
+  <label><input type="checkbox" id="optEdges" checked> Edges</label>
+  <label><input type="checkbox" id="optWire"> Wireframe</label>
+  <label><input type="checkbox" id="optGhost"> See-through</label>
+  <label><input type="checkbox" id="optGrid" checked> Grid (1 / 10 mm)</label>
+  <label><input type="checkbox" id="optLight"> Light background</label>
+
+  <h2>Section</h2>
+  <div class="btns" id="secAxis">
+    <button data-axis="off" class="on">Off</button><button data-axis="x">X</button>
+    <button data-axis="y">Y</button><button data-axis="z">Z</button>
+    <button id="secFlip" title="Flip the visible side">⇄</button>
+  </div>
+  <input type="range" id="secPos" min="0" max="1000" value="500" disabled>
+  <div class="hint" id="secVal"></div>
+
+  <h2>Measure</h2>
+  <button id="measureBtn">Measure distance</button>
+  <div class="hint" id="measureOut">Turn it on and click two points on the part.</div>
+</aside>
+
+<main id="main">
+  <canvas id="c"></canvas>
+  <div id="hud"></div>
+  <div id="toast"></div>
+  <div id="logPanel">
+    <div id="logHead"><span id="logTitle">OpenSCAD log</span><button id="logToggle">▴</button></div>
+    <pre id="log"></pre>
+  </div>
+</main>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const $ = (s) => document.querySelector(s);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('cad.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('cad.' + k, JSON.stringify(v)); } catch {} },
+};
+
+// ---------- Scene ----------
+THREE.Object3D.DEFAULT_UP.set(0, 0, 1);            // OpenSCAD is Z-up
+const main = $('#main');
+const renderer = new THREE.WebGLRenderer({ canvas: $('#c'), antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.localClippingEnabled = true;
+const labels = new CSS2DRenderer();
+labels.domElement.className = 'labels';
+main.insertBefore(labels.domElement, $('#hud'));
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x14161a);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 10000);
+camera.position.set(120, -160, 110);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.12;
+
+// Soft studio reflections so metal parts (heatsink, nozzle) read as metal
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3f4a, 0.7));
+const key = new THREE.DirectionalLight(0xffffff, 1.3);
+key.position.set(-0.6, 0.8, 1);
+key.target.position.set(0, 0, -1);
+camera.add(key, key.target);
+scene.add(camera);
+
+const grid = new THREE.Group();
+scene.add(grid);
+function buildGrid(light) {
+  grid.clear();
+  const gMinor = new THREE.GridHelper(400, 400, light ? 0xc3c7cc : 0x1f232a, light ? 0xc3c7cc : 0x1f232a);
+  const gMajor = new THREE.GridHelper(400, 40, light ? 0x8e949b : 0x3b4250, light ? 0xa3a8ae : 0x2c313a);
+  for (const g of [gMinor, gMajor]) { g.rotation.x = Math.PI / 2; grid.add(g); }
+  gMinor.position.z = -0.02;
+  grid.add(new THREE.AxesHelper(25));
+}
+
+// ---------- State ----------
+const PALETTE = [0xf59e0b, 0x38bdf8, 0xa78bfa, 0x34d399, 0xf472b6, 0xfacc15, 0xfb923c];
+const loader = new STLLoader();
+const parts = new Map();   // name -> {color, info, group, visible}
+const refs = new Map();    // file -> {group, visible}
+let colorIdx = 0;
+// LED previews get a warm-white color; everything else cycles through the palette
+const colorFor = (name, info) => (info?.color ? parseInt(info.color.slice(1), 16)
+  : /led/i.test(name) ? 0xfff1b8 : PALETTE[colorIdx++ % PALETTE.length]);
+let selected = null;
+let framedOnce = false;
+const hidden = new Set(store.get('hidden', []));
+let variant = store.get('variant', 'normal');   // parts tagged with another variant are hidden
+const inVariant = (p) => !p?.info?.variant || p.info.variant === variant;
+const shown = (name, p) => !hidden.has(name) && inVariant(p);
+const hiddenRefs = new Set(store.get('hiddenRefs', []));
+
+let refOpacity = store.get('refOpacity', 0.35);
+$('#refOpacity').value = Math.round(refOpacity * 100);
+$('#refOpacity').addEventListener('input', (e) => { refOpacity = e.target.value / 100; store.set('refOpacity', refOpacity); applyStyle(); });
+
+const opts = {
+  edges: store.get('edges', true), wire: store.get('wire', false),
+  ghost: store.get('ghost', false), grid: store.get('grid', true), light: store.get('light', true),
+};
+for (const k of Object.keys(opts)) {
+  const el = $('#opt' + k[0].toUpperCase() + k.slice(1));
+  el.checked = opts[k];
+  el.addEventListener('change', () => { opts[k] = el.checked; store.set(k, el.checked); applyStyle(); });
+}
+
+// ---------- Section plane ----------
+const clipPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
+const section = { axis: 'off', flip: false, t: 500 };
+function clipList() { return section.axis === 'off' ? [] : [clipPlane]; }
+
+function updateSection() {
+  const box = visibleBox();
+  const slider = $('#secPos');
+  slider.disabled = section.axis === 'off' || box.isEmpty();
+  if (slider.disabled) { $('#secVal').textContent = ''; applyStyle(); return; }
+  const i = { x: 0, y: 1, z: 2 }[section.axis];
+  const lo = box.min.getComponent(i) - 0.01, hi = box.max.getComponent(i) + 0.01;
+  const pos = lo + (hi - lo) * (section.t / 1000);
+  const n = new THREE.Vector3(); n.setComponent(i, section.flip ? 1 : -1);
+  clipPlane.normal.copy(n);
+  clipPlane.constant = section.flip ? -pos : pos;
+  $('#secVal').textContent = `${section.axis.toUpperCase()} = ${pos.toFixed(2)} mm · showing side ${section.flip ? '>' : '<'}`;
+  applyStyle();
+}
+$('#secAxis').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'secFlip') { section.flip = !section.flip; }
+  else {
+    section.axis = b.dataset.axis;
+    for (const x of $('#secAxis').querySelectorAll('[data-axis]')) x.classList.toggle('on', x === b);
+  }
+  updateSection();
+});
+$('#secPos').addEventListener('input', (e) => { section.t = +e.target.value; updateSection(); });
+
+// ---------- Meshes ----------
+function buildGroup(geom, color, isRef, material) {
+  const g = new THREE.Group();
+  const metal = material === 'metal';
+  const c = new THREE.Color(color);
+  const dark = c.r * 0.3 + c.g * 0.59 + c.b * 0.11 < 0.12;   // e.g. black PLA: needs light edges
+  const front = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({
+    color, roughness: metal ? 0.32 : dark ? 0.5 : 0.6, metalness: metal ? 0.9 : 0.0 }));
+  const back = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({
+    color: dark ? new THREE.Color(0x3a3f47) : c.clone().multiplyScalar(isRef ? 0.25 : 0.4), side: THREE.BackSide }));
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geom, 28),
+    new THREE.LineBasicMaterial({ color: isRef ? 0xb8c0cc : dark ? 0x6b727c : 0x07090c,
+      transparent: true, opacity: isRef ? 0.35 : dark ? 0.75 : 0.6 }));
+  front.userData.pickable = true;
+  g.add(front, back, edges);
+  g.userData = { front, back, edges, isRef };
+  return g;
+}
+
+function applyStyle() {
+  const planes = clipList();
+  const all = [...[...parts.values()].map((p) => p.group), ...[...refs.values()].map((r) => r.group)];
+  for (const g of all) {
+    if (!g) continue;
+    const { front, back, edges, isRef } = g.userData;
+    const ghost = (isRef && refOpacity < 1) || opts.ghost;
+    front.material.transparent = ghost;
+    front.material.opacity = isRef ? refOpacity : opts.ghost ? 0.45 : 1;
+    front.material.depthWrite = !ghost;
+    front.material.wireframe = opts.wire;
+    back.visible = !ghost && !opts.wire;
+    edges.visible = opts.edges || isRef;
+    if (isRef) edges.material.opacity = Math.min(0.2 + refOpacity, 0.7);
+    for (const m of [front.material, back.material, edges.material]) {
+      m.clippingPlanes = planes;
+      m.needsUpdate = true;
+    }
+  }
+  grid.visible = opts.grid;
+  if (grid.userData.light !== opts.light) { buildGrid(opts.light); grid.userData.light = opts.light; }
+  scene.background = new THREE.Color(opts.light ? 0xd5d8dc : 0x14161a);
+  placeGrid();
+}
+
+// Keep the grid under the lowest visible geometry so it never hides hanging parts
+function placeGrid() {
+  const box = visibleBox();
+  grid.position.z = box.isEmpty() ? 0 : Math.min(0, box.min.z - 0.05);
+}
+
+function dispose(group) {
+  group.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); });
+}
+
+async function loadSTL(url) {
+  const geom = await loader.loadAsync(url);
+  geom.computeVertexNormals();
+  geom.computeBoundingBox();
+  return geom;
+}
+
+async function loadPart(name, info) {
+  let p = parts.get(name);
+  if (!p) { p = { color: colorFor(name, info) }; parts.set(name, p); }
+  if (info.color) p.color = parseInt(info.color.slice(1), 16);
+  p.info = info;
+  let geom;
+  try { geom = await loadSTL(`/build/${encodeURIComponent(name)}.stl?v=${info.version}&t=${Date.now()}`); }
+  catch (err) { console.error(err); return; }
+  if (p.group) { scene.remove(p.group); dispose(p.group); }
+  p.group = buildGroup(geom, p.color, false, info.material);
+  p.group.visible = shown(name, p);
+  scene.add(p.group);
+  applyStyle();
+  if (section.axis !== 'off') updateSection();
+  if (!framedOnce) { framedOnce = true; setView(store.get('view', 'iso')); }
+  renderList(); renderHud();
+}
+
+async function syncRefs(list) {
+  for (const [file, r] of refs) { scene.remove(r.group); dispose(r.group); refs.delete(file); }
+  for (const file of list) {
+    try {
+      const geom = await loadSTL(`/refs/${encodeURIComponent(file)}?t=${Date.now()}`);
+      const group = buildGroup(geom, 0xa9b4c2, true);
+      group.visible = !hiddenRefs.has(file);
+      refs.set(file, { group });
+      scene.add(group);
+    } catch (err) { console.error(err); }
+  }
+  applyStyle(); renderRefs();
+  if (!framedOnce && refs.size) { framedOnce = true; setView('iso'); }
+}
+
+// ---------- variant switch ----------
+$('#variant').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  variant = b.dataset.variant; store.set('variant', variant);
+  for (const [name, p] of parts) if (p.group) p.group.visible = shown(name, p);
+  renderList(); placeGrid();
+});
+
+// ---------- UI lists ----------
+const fmtMs = (ms) => (ms >= 1000 ? (ms / 1000).toFixed(1) + ' s' : ms + ' ms');
+const STATUS = { ok: 'ok', error: 'error', building: 'building…' };
+
+function renderList() {
+  const ul = $('#parts');
+  ul.innerHTML = '';
+  const names = [...parts.keys()].sort().filter((n) => inVariant(parts.get(n)));
+  $('#noparts').style.display = names.length ? 'none' : '';
+  document.querySelectorAll('#variant button').forEach((b) => b.classList.toggle('on', b.dataset.variant === variant));
+  for (const name of names) {
+    const p = parts.get(name), st = p.info?.status || 'building';
+    const li = document.createElement('li');
+    li.className = 'item' + (name === selected ? ' sel' : '');
+    const sw = '#' + p.color.toString(16).padStart(6, '0');
+    li.innerHTML = `<input type="checkbox" ${hidden.has(name) ? '' : 'checked'} title="Show / hide">
+      <span class="sw" style="background:${sw}"></span>
+      <span class="name" title="${name}.scad">${name}</span>
+      <span class="badge ${st}">${STATUS[st] || st}</span>
+      <a href="/src/${encodeURIComponent(name)}.scad" target="_blank" title="View source">&lt;/&gt;</a>
+      <a href="/build/${encodeURIComponent(name)}.stl" download="${name}.stl" title="Download STL">⬇</a>`;
+    li.querySelector('input').addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.target.checked ? hidden.delete(name) : hidden.add(name);
+      store.set('hidden', [...hidden]);
+      if (p.group) p.group.visible = e.target.checked;
+      placeGrid();
+    });
+    for (const a of li.querySelectorAll('a')) a.addEventListener('click', (e) => e.stopPropagation());
+    li.addEventListener('click', () => select(name));
+    li.addEventListener('dblclick', () => { select(name); frame([p.group]); });
+    ul.appendChild(li);
+  }
+}
+
+function renderRefs() {
+  const ul = $('#refs');
+  ul.innerHTML = '';
+  $('#norefs').style.display = refs.size ? 'none' : '';
+  for (const [file, r] of refs) {
+    const li = document.createElement('li');
+    li.className = 'item';
+    li.innerHTML = `<input type="checkbox" ${hiddenRefs.has(file) ? '' : 'checked'}>
+      <span class="sw" style="background:#9aa3b0"></span><span class="name" title="${file}">${file}</span>`;
+    li.querySelector('input').addEventListener('change', (e) => {
+      e.target.checked ? hiddenRefs.delete(file) : hiddenRefs.add(file);
+      store.set('hiddenRefs', [...hiddenRefs]);
+      r.group.visible = e.target.checked;
+      placeGrid();
+    });
+    ul.appendChild(li);
+  }
+}
+
+function select(name) {
+  selected = name;
+  store.set('selected', name);
+  renderList(); renderHud(); renderLog();
+}
+
+function renderHud() {
+  const p = parts.get(selected);
+  if (!p || !p.group) { $('#hud').textContent = ''; return; }
+  const bb = p.group.userData.front.geometry.boundingBox;
+  const s = new THREE.Vector3(); bb.getSize(s);
+  const tris = p.group.userData.front.geometry.attributes.position.count / 3;
+  $('#hud').innerHTML = `<b>${selected}</b> &nbsp; X ${s.x.toFixed(2)} × Y ${s.y.toFixed(2)} × Z ${s.z.toFixed(2)} mm
+    &nbsp;·&nbsp; ${tris.toLocaleString('en')} triangles &nbsp;·&nbsp; built in ${fmtMs(p.info.ms || 0)}`;
+}
+
+function esc(s) { return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function renderLog() {
+  const p = parts.get(selected);
+  const log = p?.info?.log || '';
+  $('#logTitle').textContent = selected ? `OpenSCAD log — ${selected}` : 'OpenSCAD log';
+  $('#log').innerHTML = log.split('\n').map((l) => {
+    const cls = /ERROR/.test(l) ? 'e' : /WARNING/.test(l) ? 'w' : /^ECHO/.test(l) ? 'echo' : '';
+    return cls ? `<span class="${cls}">${esc(l)}</span>` : esc(l);
+  }).join('\n');
+}
+function setLogOpen(open) {
+  $('#logPanel').classList.toggle('open', open);
+  $('#logToggle').textContent = open ? '▾' : '▴';
+}
+$('#logHead').addEventListener('click', () => setLogOpen(!$('#logPanel').classList.contains('open')));
+
+let toastTimer;
+function toast(msg, isErr) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'show' + (isErr ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.className = isErr ? 'error' : ''), isErr ? 5000 : 2200);
+}
+
+// ---------- Camera ----------
+function visibleBox(groups) {
+  const box = new THREE.Box3();
+  const list = groups || [...[...parts.values()].map((p) => p.group), ...[...refs.values()].map((r) => r.group)];
+  for (const g of list) if (g && g.visible) box.expandByObject(g.userData.front);
+  return box;
+}
+const VIEWS = { iso: [1, -1.25, 0.9], front: [0, -1, 0], right: [1, 0, 0], top: [0, -0.0001, 1], bottom: [0, -0.0001, -1] };
+function frame(groups, dir) {
+  const box = visibleBox(groups);
+  if (box.isEmpty()) return;
+  const c = box.getCenter(new THREE.Vector3());
+  const r = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 5);
+  const d = r / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.05;
+  const v = dir ? new THREE.Vector3(...dir).normalize() : camera.position.clone().sub(controls.target).normalize();
+  camera.position.copy(c).addScaledVector(v, d);
+  controls.target.copy(c);
+  camera.near = d / 100; camera.far = d * 100; camera.updateProjectionMatrix();
+  controls.update();
+}
+function setView(name) { store.set('view', name); frame(null, VIEWS[name]); }
+document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+$('#fit').addEventListener('click', () => frame());
+
+// ---------- Measure ----------
+const measure = { on: false, pts: [], objs: [] };
+const raycaster = new THREE.Raycaster();
+function clearMeasure() {
+  for (const o of measure.objs) { scene.remove(o); o.geometry?.dispose?.(); o.element?.remove(); }
+  measure.objs = []; measure.pts = [];
+}
+$('#measureBtn').addEventListener('click', () => {
+  measure.on = !measure.on;
+  $('#measureBtn').classList.toggle('on', measure.on);
+  main.classList.toggle('measuring', measure.on);
+  if (!measure.on) clearMeasure();
+  $('#measureOut').textContent = measure.on ? 'Click the first point (Esc to exit).' : 'Turn it on and click two points on the part.';
+});
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && measure.on) $('#measureBtn').click(); });
+
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', (e) => (downAt = [e.clientX, e.clientY]));
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!measure.on || !downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  raycaster.setFromCamera(new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -((e.clientY - rect.top) / rect.height) * 2 + 1), camera);
+  const targets = [];
+  scene.traverseVisible((o) => { if (o.userData.pickable) targets.push(o); });
+  const planes = clipList();
+  const hit = raycaster.intersectObjects(targets, false).find((h) => planes.every((pl) => pl.distanceToPoint(h.point) >= 0));
+  if (!hit) return;
+  if (measure.pts.length === 2) clearMeasure();
+  measure.pts.push(hit.point.clone());
+  const r = Math.max(visibleBox().getSize(new THREE.Vector3()).length() * 0.006, 0.15);
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), new THREE.MeshBasicMaterial({ color: 0xf59e0b, depthTest: false }));
+  dot.renderOrder = 10; dot.position.copy(hit.point);
+  scene.add(dot); measure.objs.push(dot);
+  if (measure.pts.length === 1) { $('#measureOut').textContent = 'Now the second point.'; return; }
+  const [a, b] = measure.pts;
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]),
+    new THREE.LineBasicMaterial({ color: 0xf59e0b, depthTest: false }));
+  line.renderOrder = 10;
+  scene.add(line); measure.objs.push(line);
+  const d = a.distanceTo(b), dd = b.clone().sub(a);
+  const el = document.createElement('div');
+  el.className = 'mlabel'; el.textContent = d.toFixed(2) + ' mm';
+  const lab = new CSS2DObject(el); lab.position.copy(a).add(b).multiplyScalar(0.5);
+  scene.add(lab); measure.objs.push(lab);
+  $('#measureOut').innerHTML = `<b>${d.toFixed(2)} mm</b><br>ΔX ${dd.x.toFixed(2)} · ΔY ${dd.y.toFixed(2)} · ΔZ ${dd.z.toFixed(2)}`;
+});
+
+// ---------- Server sync ----------
+async function init() {
+  const res = await fetch('/api/state');
+  const state = await res.json();
+  selected = store.get('selected', null);
+  const names = Object.keys(state.parts).sort();
+  if (!names.includes(selected)) selected = names[0] || null;
+  for (const name of names) {
+    const info = state.parts[name];
+    if (!parts.has(name)) parts.set(name, { color: colorFor(name, info), info });
+    if (info.status === 'ok' || info.version > 0) loadPart(name, info);
+  }
+  renderList(); renderLog();
+  syncRefs(state.refs);
+}
+
+function connect() {
+  const es = new EventSource('/events');
+  es.onopen = () => $('#conn').classList.add('on');
+  es.onerror = () => $('#conn').classList.remove('on');
+  es.onmessage = (m) => {
+    const ev = JSON.parse(m.data);
+    if (ev.type === 'building') {
+      const p = parts.get(ev.part) || { color: colorFor(ev.part) };
+      p.info = { ...(p.info || { version: 0 }), status: 'building' };
+      parts.set(ev.part, p);
+      renderList();
+    } else if (ev.type === 'build') {
+      const prevVersion = parts.get(ev.part)?.group ? parts.get(ev.part).info?.version : -1;
+      const p = parts.get(ev.part); p.info = ev;
+      select(ev.part);
+      if (ev.status === 'ok') {
+        if (ev.version !== prevVersion) loadPart(ev.part, ev);
+        toast(`✓ ${ev.part} updated (${fmtMs(ev.ms)})`);
+        setLogOpen(/ERROR|WARNING/.test(ev.log || ''));
+      } else {
+        toast(`✗ Error in ${ev.part}.scad — see the log`, true);
+        setLogOpen(true);
+      }
+      renderList();
+    } else if (ev.type === 'removed') {
+      const p = parts.get(ev.part);
+      if (p?.group) { scene.remove(p.group); dispose(p.group); }
+      parts.delete(ev.part);
+      if (selected === ev.part) selected = null;
+      renderList(); renderHud(); renderLog();
+    } else if (ev.type === 'refs') {
+      syncRefs(ev.refs);
+    }
+  };
+}
+
+// ---------- Loop ----------
+new ResizeObserver(() => {
+  const w = main.clientWidth, h = main.clientHeight;
+  renderer.setSize(w, h, false);
+  labels.setSize(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}).observe(main);
+
+renderer.setAnimationLoop(() => {
+  controls.update();
+  renderer.render(scene, camera);
+  labels.render(scene, camera);
+});
+
+applyStyle();
+// Scripting hook (used to render the README images): show only some parts, or load extra STLs from build/
+const extras = [];
+window.cad = {
+  camera, controls, frame, setView,
+  only(names) {
+    for (const [n, p] of parts) if (p.group) p.group.visible = names.includes(n);
+    for (const [, r] of refs) r.group.visible = false;
+    for (const g of extras) g.visible = false;
+    placeGrid();
+  },
+  async extra(file, color = 0x1d1d1f) {
+    const g = buildGroup(await loadSTL(`/build/${file}?t=${Date.now()}`), color, false);
+    scene.add(g); extras.push(g); applyStyle(); placeGrid();
+    return g;
+  },
+  frameExtra(dir) { frame(extras.filter((g) => g.visible), dir); },
+};
+init().then(connect);
+</script>
+</body>
+</html>
