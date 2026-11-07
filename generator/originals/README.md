@@ -1,8 +1,8 @@
 # Original parts used by the generator
 
-`duct_5015.stl` and `adapter_4010_v2.stl` are Locos3D's `Tobera_5015_V2.stl` and `Adapter_4010_to_5015_V2.stl`
-from [IGNEUS V2](https://www.thingiverse.com/thing:4178590), only moved to where they sit on the printer so the
-generator can build the remixed parts around them.
+`duct_5015.stl` is Locos3D's `Tobera_5015_V2.stl` from [IGNEUS V2](https://www.thingiverse.com/thing:4178590), only
+moved to where it sits on the printer so the generator can carve the LED mount against it. The other parts are
+drawn from scratch and don't need it.
 
-They are shared under the original license, [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/):
+It is shared under the original license, [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/):
 credit Locos3D, non-commercial use only, share alike.

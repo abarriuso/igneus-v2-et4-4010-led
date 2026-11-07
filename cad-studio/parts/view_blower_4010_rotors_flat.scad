@@ -1,5 +1,5 @@
 // color: #2a2a2d
-// variant: flat
+// variant: flat onepiece_flat
 // PREVIEW ONLY: impellers of the flat-variant blowers (they spin in the animation; axis parallel to Y).
 include <lib/flat4010.scad>
 include <lib/fans.scad>

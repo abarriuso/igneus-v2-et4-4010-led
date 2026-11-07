@@ -82,8 +82,9 @@
   <header><h1>CAD <b>Studio</b></h1><span id="conn" class="dot" title="Connection to the server"></span></header>
 
   <h2>Parts</h2>
-  <div class="btns" id="variant" title="Parts tagged '// variant:' only show in their variant">
+  <div class="btns" id="variant" title="Parts tagged '// variant:' only show in the variants they name">
     <button data-variant="normal">Normal</button><button data-variant="flat">Flat</button>
+    <button data-variant="onepiece">One-piece</button><button data-variant="onepiece_flat">One-piece flat</button>
   </div>
   <ul id="parts"></ul>
   <p class="hint" id="noparts">Waiting for parts in <code>parts/</code>…</p>
@@ -194,7 +195,7 @@ let selected = null;
 let framedOnce = false;
 const hidden = new Set(store.get('hidden', []));
 let variant = store.get('variant', 'normal');   // parts tagged with another variant are hidden
-const inVariant = (p) => !p?.info?.variant || p.info.variant === variant;
+const inVariant = (p) => !p?.info?.variant || p.info.variant.split(/[\s,]+/).includes(variant);
 const shown = (name, p) => !hidden.has(name) && inVariant(p);
 const hiddenRefs = new Set(store.get('hiddenRefs', []));
 

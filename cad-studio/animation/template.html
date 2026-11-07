@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>ET4 Igneus 4010 + LED</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -198,7 +199,7 @@ html.embed .controls { padding: 0 12px 8px; }
         </div>
       </div>
       </div>
-      <p class="note">Printed parts in black. The mod itself is the 4010 adapter, the LED mount and the 2510 fan adapter; the rest is the original Igneus V2. The fans are approximate models of the Ender 3 stock 4010 blower and the Kobra X 2510.</p>
+      <p class="note" id="note">Printed parts in black. The mod itself is the 4010 adapter, the LED mount and the 2510 fan adapter; the rest is the original Igneus V2. The fans are approximate models of the Ender 3 stock 4010 blower and the Kobra X 2510.</p>
     </section>
     <aside>
       <h2>Assembly order</h2>
@@ -212,6 +213,7 @@ html.embed .controls { padding: 0 12px 8px; }
 <script>
 if (new URLSearchParams(location.search).has('embed')) document.documentElement.classList.add('embed');
 const SCENE = /*SCENE*/null;
+if (SCENE && SCENE.note) document.getElementById('note').textContent = SCENE.note;
 
 (function () {
   const stage = document.getElementById('stage');

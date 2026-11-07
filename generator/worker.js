@@ -5,11 +5,11 @@ import { createOpenSCAD } from 'https://cdn.jsdelivr.net/npm/openscad-wasm-prebu
 // virtual file system path (relative to /w) -> URL relative to this worker
 const FILES = {
   'parts/customizer.scad': '../cad-studio/parts/customizer.scad',
+  'parts/lib/duct_body.scad': '../cad-studio/parts/lib/duct_body.scad',
   'parts/lib/duct4010.scad': '../cad-studio/parts/lib/duct4010.scad',
   'parts/lib/flat4010.scad': '../cad-studio/parts/lib/flat4010.scad',
   'parts/lib/fan_adapter.scad': '../cad-studio/parts/lib/fan_adapter.scad',
   'igneus/asm/duct_5015.stl': 'originals/duct_5015.stl',
-  'igneus/asm/adapter_4010_v2.stl': 'originals/adapter_4010_v2.stl',
 };
 let files;
 async function loadFiles() {

@@ -14,7 +14,7 @@
     border-bottom: 1px solid var(--line); background: var(--panel); }
   h1 { font-size: 17px; margin: 0; font-weight: 600; }
   h1 span { color: var(--muted); font-weight: 400; }
-  .tabs { display: flex; gap: 6px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
   .tabs button { background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 8px;
     padding: 6px 14px; font: inherit; cursor: pointer; }
   .tabs button.on { background: var(--accent); border-color: var(--accent); color: #1a1205; font-weight: 600; }
@@ -32,6 +32,8 @@
   <div class="tabs" role="tablist">
     <button role="tab" data-v="normal">Normal</button>
     <button role="tab" data-v="flat">Flat</button>
+    <button role="tab" data-v="onepiece">One-piece</button>
+    <button role="tab" data-v="onepiece_flat">One-piece flat</button>
   </div>
   <div class="desc" id="desc"></div>
   <nav>
@@ -47,8 +49,10 @@
 </footer>
 <script>
   const PAGES = {
-    normal: { src: 'normal.html', desc: 'The 4010 blowers sit in the original position, held by their mounting screw.' },
-    flat: { src: 'flat.html', desc: 'The 4010 blowers sit on top of the adapters with the intake facing the front.' },
+    normal: { src: 'normal.html', desc: 'Adapters on the original ducts: the 4010 blowers stand in the original position, push-fitted in the cradles.' },
+    flat: { src: 'flat.html', desc: 'Adapters on the original ducts: the 4010 blowers lie on top with the intake facing the front.' },
+    onepiece: { src: 'onepiece.html', desc: 'One-piece ducts with the cradle and the LED channel built in, blowers in the original position.' },
+    onepiece_flat: { src: 'onepiece_flat.html', desc: 'One-piece ducts with the cradle and the LED channel built in, blowers lying on top.' },
   };
   const view = document.getElementById('view');
   function show(v) {

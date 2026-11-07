@@ -1,5 +1,5 @@
 // color: #0e0e0f
-// variant: normal
+// variant: normal onepiece
 // PREVIEW ONLY: both 4010 blowers (the Creality Ender 3 stock part-cooling fan) in the adapter cradles.
 // The impellers are separate (view_blower_4010_rotors.scad) so they can spin.
 include <lib/duct4010.scad>

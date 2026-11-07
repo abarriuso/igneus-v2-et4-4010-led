@@ -1,5 +1,5 @@
 // color: #0e0e0f
-// variant: flat
+// variant: flat onepiece_flat
 // PREVIEW ONLY: both 4010 blowers of the flat variant, on top of the adapters with the intake facing the front.
 // The impellers are separate (view_blower_4010_rotors_flat.scad) so they can spin.
 include <lib/flat4010.scad>

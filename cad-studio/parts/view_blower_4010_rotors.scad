@@ -1,5 +1,5 @@
 // color: #2a2a2d
-// variant: normal
+// variant: normal onepiece
 // PREVIEW ONLY: impellers of both 4010 blowers (they spin in the animation; axis parallel to X through y,z = blower_c).
 include <lib/duct4010.scad>
 include <lib/fans.scad>

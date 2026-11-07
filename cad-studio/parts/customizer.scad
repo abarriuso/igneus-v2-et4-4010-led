@@ -4,8 +4,8 @@
 // (https://www.thingiverse.com/thing:4178590).
 //
 // Open this file in OpenSCAD, show the Customizer (Window > Customizer), pick a part, enter your measurements,
-// render (F6) and export the STL (F7). Every part except the fan adapter needs the original Igneus files:
-// see ../igneus/README.md.
+// render (F6) and export the STL (F7). Only the LED mount needs an original Igneus file (the 5015 duct it is
+// carved against): see ../igneus/README.md.
 
 include <lib/flat4010.scad>     // also brings in lib/duct4010.scad
 include <lib/fan_adapter.scad>

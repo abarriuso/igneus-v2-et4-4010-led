@@ -3,13 +3,12 @@
 The original files are not part of this repository. Download the Igneus V2 pack from
 https://www.thingiverse.com/thing:4178590 (Locos3D, CC BY-NC-SA 4.0), put these files in cad-studio/igneus/:
 
-    Tobera_5015_V2.stl  Adapter_4010_to_5015_V2.stl  Igneus_Version1_Rev.3.stl  Abrazadera_Adapter_Fan_30mm.stl
+    Tobera_5015_V2.stl  Igneus_Version1_Rev.3.stl  Abrazadera_Adapter_Fan_30mm.stl
 
 and run:  python3 tools/place_originals.py
 
 It writes, in the assembly ("view") frame used by every part in parts/:
-    igneus/asm/duct_5015.stl          5015 duct, right side (used to build the adapter and the LED mount)
-    igneus/asm/adapter_4010_v2.stl    original 4010 adapter V2, right side (base of the improved adapter)
+    igneus/asm/duct_5015.stl          5015 duct, right side (the LED mount is carved against it)
     igneus/view/body_v1_v6.stl        Igneus body for the E3D V6 (preview only)
     igneus/view/clamp_fan30.stl       front clamp with the 30 mm fan mount (preview only)
     igneus/view/original_ducts.stl    both 5015 ducts, right and mirrored left (preview only)
@@ -28,7 +27,6 @@ SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "igneus"
 DUCT = ("Tobera_5015_V2.stl", [[1, 0, 0], [0, 0, -1], [0, 1, 0]], [-344.0, 0.0, 168.375])
 PLACES = {
     "asm/duct_5015.stl": DUCT,
-    "asm/adapter_4010_v2.stl": ("Adapter_4010_to_5015_V2.stl", [[1, 0, 0], [0, 1, 0], [0, 0, 1]], [-230.66402, 64.729, -58.243]),
     "view/body_v1_v6.stl": ("Igneus_Version1_Rev.3.stl", [[1, 0, 0], [0, 1, 0], [0, 0, 1]], [-130.232, 30.8005, -58.849]),
     "view/clamp_fan30.stl": ("Abrazadera_Adapter_Fan_30mm.stl", [[-1, 0, 0], [0, 0, 1], [0, 1, 0]], [137.198, -27.06, 58.311]),
 }

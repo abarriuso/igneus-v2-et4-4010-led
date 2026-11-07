@@ -54,11 +54,11 @@ def broadcast(event):
 
 
 def part_hints(src):
-    """Optional '// color: #rrggbb', '// material: metal|plastic' and '// variant: normal|flat' in the first lines."""
+    """Optional '// color: #rrggbb', '// material: metal|plastic' and '// variant: <one or more names>' in the first lines."""
     hints = {"color": None, "material": None, "variant": None}
     try:
         for line in src.read_text(encoding="utf-8", errors="replace").splitlines()[:6]:
-            m = re.match(r"\s*//\s*(color|material|variant):\s*(#[0-9a-fA-F]{6}|\w+)", line)
+            m = re.match(r"\s*//\s*(color|material|variant):\s*(#[0-9a-fA-F]{6}|\w+(?:[ ,]+\w+)*)", line)
             if m:
                 hints[m.group(1)] = m.group(2)
     except OSError:

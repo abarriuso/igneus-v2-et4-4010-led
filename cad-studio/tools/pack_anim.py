@@ -1,7 +1,8 @@
 """Packs the preview parts (build/*.stl) for the three.js assembly animation.
 
-Usage: pack_anim.py [--flat]  ->  writes animation/assembly.html (or assembly_flat.html) from animation/template.html
+Usage: pack_anim.py [--onepiece] [--flat]  ->  writes animation/assembly[_onepiece][_flat].html from animation/template.html
   --flat: the flat variant (blowers on top of the adapters, intake to the front, no blower ear screw)
+  --onepiece: the one-piece ducts instead of the original ducts + adapters + LED mounts
 Each unit carries its meshes (int16 relative to its centre, 1/200 mm), its assembly step and the
 explode vector it flies in from. Impellers and rotors are tagged so they spin at the end.
 """
@@ -19,7 +20,10 @@ ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 Q = 200.0
 FLAT = "--flat" in sys.argv
+ONE = "--onepiece" in sys.argv
 V = "_flat" if FLAT else ""   # suffix of the variant-specific parts
+HW = "_flat" if FLAT or ONE else ""   # screws and nuts without the adapter's M3 (flat and one-piece variants)
+OUT = ("_onepiece" if ONE else "") + V
 BLACK, ALU, STEEL, BRASS, SCREW, FAN, LED = "#1d1d1f", "#cfd3d8", "#9aa0a6", "#c9a24a", "#b9bec4", "#0e0e0f", "#f2f1ec"
 
 STEPS = [
@@ -29,6 +33,13 @@ STEPS = [
     ("Heater cartridge", "Slides into the block from the side"),
     ("Nozzle", "Screws in from below"),
     ("Front clamp", "Locks the V6 against the body"),
+] + ([
+    ("One-piece 4010 ducts", "Duct, fan cradle and LED channel in one part, one on each side"),
+    ("Duct M3 screws and nuts", "One per side, through the height slot into the body"),
+    ("LED strips", "Slid into the channel of each duct, 2 LEDs per side, 24 V in parallel"),
+    ("4010 blowers", "Stock Ender 3 fans in the cradles, intake to the front" if FLAT
+     else "Stock Ender 3 part-cooling fans, push-fit in the cradles"),
+] if ONE else [
     ("Original 5015 ducts", "One on each side"),
     ("Duct M3 screws and nuts", "One per side, through the height slot into the body"),
     ("LED mounts", "Rest on the inner face of each duct"),
@@ -39,7 +50,7 @@ STEPS = [
 ] if FLAT else [
     ("Adapter M3 screws", "Flat head, adapter arm + duct ear, with a nut"),
     ("4010 blowers", "Stock Ender 3 part-cooling fans, push-fit in the cradles"),
-]) + [
+])) + [
     ("25 → 30 mm fan adapter", "Held by the clamp's own M3 screws"),
     ("2510 hotend fan", "Kobra X fan, 4 × self-tapping M2.5"),
 ]
@@ -92,7 +103,7 @@ def unit(step, name, pieces, dir_, dist, spin=None, delay=0.0, thread=None):
 
 
 def screws(keep):
-    return meshes_of("view_screws" + V, keep)
+    return meshes_of("view_screws" + HW, keep)
 
 
 # 1-6: body and hotend
@@ -104,24 +115,33 @@ unit(5, "nozzle", [piece(meshes_of("view_v6_nozzle"), BRASS, True)], [0, 0, -1],
 unit(6, "clamp", [piece(meshes_of("view_clamp_30"), BLACK)], [0, -1, 0], 100)
 # 7-8: ducts and through bolt
 for s in (1, -1):
-    unit(7, f"duct{s}", [piece(meshes_of("view_original_ducts", side(s)), BLACK)], [s, 0, 0.25], 100,
-         delay=0.15 if s < 0 else 0)
+    sfx = "right" if s > 0 else "left"
+    ducts = meshes_of(f"duct_4010{V}_{sfx}") if ONE else meshes_of("view_original_ducts", side(s))
+    unit(7, f"duct{s}", [piece(ducts, BLACK)], [s, 0, 0.25], 100, delay=0.15 if s < 0 else 0)
 for s in (1, -1):
     d = 0.15 if s < 0 else 0
     # the nut drops into the body's nut pocket, then the screw goes through the duct's height slot into it
-    unit(8, f"duct_nut{s}", [piece(meshes_of("view_nuts" + V, lambda c, d, s=s: c[2] < 25 and c[0] * s > 0), SCREW, True)],
+    unit(8, f"duct_nut{s}", [piece(meshes_of("view_nuts" + HW, lambda c, d, s=s: c[2] < 25 and c[0] * s > 0), SCREW, True)],
          [0, 0, 1], 30, delay=d)
     unit(8, f"duct_m3{s}", [piece(screws(lambda c, d, s=s: abs(c[2] - 19.39) < 1 and c[0] * s > 0), SCREW, True)],
          [s, 0, 0], 45, spin=[1, 0, 0, -5 * s], delay=d + 0.3, thread=14)
+# one-piece: the strips slide into the ducts' channels from the front, then the blowers drop into the cradles
+if ONE:
+    for s in (1, -1):
+        d = 0.15 if s < 0 else 0
+        unit(9, f"strip{s}", [piece(meshes_of("view_led_strips", side(s)), LED, role="led")], [0, -1, 0], 95, delay=d)
+        unit(10, f"blower{s}", [piece(meshes_of("view_blowers_4010" + V, side(s)), FAN),
+                                piece(meshes_of("view_blower_4010_rotors" + V, side(s)), "#2a2a2d", role="impeller")],
+             [0.25 * s, -0.5, 1] if FLAT else [0.3 * s, -0.2, 1], 120, delay=d)
 # 9-10: LEDs
-for s in (1, -1):
+for s in ((1, -1) if not ONE else ()):
     sfx = "right" if s > 0 else "left"
     unit(9, f"led_mount{s}", [piece(meshes_of(f"led_mount_{sfx}"), BLACK)], [-0.25 * s, 0, -1], 80,
          delay=0.15 if s < 0 else 0)
     unit(10, f"strip{s}", [piece(meshes_of("view_led_strips", side(s)), LED, role="led")], [-0.3 * s, 0, -1], 95,
          delay=0.15 if s < 0 else 0)
 # 11-13: adapters and blowers (the flat variant has no blower screw, so the hotend fan steps move up by one)
-for s in (1, -1):
+for s in ((1, -1) if not ONE else ()):
     sfx = "right" if s > 0 else "left"
     d = 0.15 if s < 0 else 0
     blower = [piece(meshes_of("view_blowers_4010" + V, side(s)), FAN),
@@ -138,7 +158,7 @@ for s in (1, -1):
     unit(12, f"blower_m3{s}", [piece(screws(lambda c, d, s=s: c[2] > 30 and c[0] * s > 0), SCREW, True)],
          [s, 0, 0], 45, spin=[1, 0, 0, -5 * s], delay=d + 0.3, thread=10)
 # 14-15 (13-14 in the flat variant): hotend fan
-F = 13 if FLAT else 14
+F = 11 if ONE else 13 if FLAT else 14
 unit(F, "fan_adapter", [piece(meshes_of("fan_adapter_2510_30"), BLACK)], [0, -1, 0.1], 90)
 for x in (-11, 11):
     unit(F, f"clamp_m3{x}", [piece(screws(lambda c, d, x=x: abs(c[2] - 15.65) < 1 and c[0] * x > 0),
@@ -155,8 +175,8 @@ for u in units:
     for p in u["pieces"]:
         assert p["v"], u["name"]
 used = sum(1 for u in units if u["name"].startswith(("duct_m3", "blower_m3", "clamp_m3", "m25_")))
-assert used == (2 + 2 + 4 if FLAT else 2 + 2 + 2 + 4), used
-assert len(components(*load(BUILD / f"view_screws{V}.stl"))) == (8 if FLAT else 10)
+assert used == (2 + 2 + 4 if HW else 2 + 2 + 2 + 4), used
+assert len(components(*load(BUILD / f"view_screws{HW}.stl"))) == (8 if HW else 10)
 
 # LED wiring, both strips in parallel on one 24 V connector behind the body (view frame).
 # Each wire leaves the back end of its strip (behind the duct, y > 0), climbs between the duct and the
@@ -291,9 +311,14 @@ bed = {"z": Z_BED, "x": [round(bed_x[0] - 16, 1), round(bed_x[1] + 16, 1)],
 
 scene = {"bed": bed, "steps": [{"title": t, "detail": d} for t, d in STEPS], "units": units,
          "leds": {"x": 27.25, "ys": [-9.55, -27.65], "z": -20.5, "dir": [-0.966, 0, -0.259]},
-         "wiring": wiring, "fan_wiring": fan_wiring, "airflow": airflow, "impeller_axis": "y" if FLAT else "x"}
+         "wiring": wiring, "fan_wiring": fan_wiring, "airflow": airflow, "impeller_axis": "y" if FLAT else "x",
+         "note": ("Printed parts in black. The mod itself is the one-piece duct (duct, fan cradle and LED channel in one "
+                  "part) and the 2510 fan adapter; the rest is the original Igneus V2." if ONE else
+                  "Printed parts in black. The mod itself is the 4010 adapter, the LED mount and the 2510 fan adapter; "
+                  "the rest is the original Igneus V2.") +
+                 " The fans are approximate models of the Ender 3 stock 4010 blower and the Kobra X 2510."}
 template = (ROOT / "animation" / "template.html").read_text(encoding="utf-8")
 html = template.replace("/*SCENE*/null", json.dumps(scene, separators=(",", ":")))
-dst = ROOT / "animation" / f"assembly{V}.html"
+dst = ROOT / "animation" / f"assembly{OUT}.html"
 dst.write_text(html, encoding="utf-8")
 print(f"{dst.name}: {len(units)} units, {len(html) / 1e6:.2f} MB")

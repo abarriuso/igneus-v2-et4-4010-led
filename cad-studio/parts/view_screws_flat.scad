@@ -1,7 +1,7 @@
 // color: #b9bec4
-// variant: flat
+// variant: flat onepiece onepiece_flat
 // material: metal
-// PREVIEW ONLY (flat variant, no blower ear screw): M3 screws (and the 2510's M2.5) in place. The nuts are in view_nuts.scad.
+// PREVIEW ONLY (flat and one-piece variants: no adapter screw): M3 screws (and the 2510's M2.5) in place. The nuts are in view_nuts.scad.
 $fn = 32;
 
 module socket_cap(l, d = 3, head = 5.5, h = 3) {   // socket head cap screw pointing to +Z, head at z = 0

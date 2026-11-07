@@ -14,30 +14,35 @@ licensed under [Creative Commons BY-NC-SA 4.0](https://creativecommons.org/licen
 ## What this remix adds
 
 - **4010 adapter** to fit the Ender 3's stock 4010 blowers to the original 5015 ducts, in two versions:
-  - **Normal**: the blower sits in the original position, held by its mounting screw.
+  - **Normal**: the blower stands in the original position, push-fitted in the cradle; the adapter plugs into the
+    duct and is screwed to the duct's ear.
   - **Flat**: the blower sits on top of the adapter with its intake facing the front, like the hotend fan.
     The adapter is only 15 mm tall, so the blowers sit low.
 - **LED mount** that fits on the inside of each original duct, held with a zip tie, and aims two LEDs of a
   24 V LED strip with one lensed LED per segment, like the light strips sold for the Bambu Lab A1, at the nozzle.
-- **One-piece duct** with the 4010 adapter and the LED channel built in, in both versions, if you prefer to reprint
-  the ducts.
+- **One-piece duct**, in both versions, if you prefer to reprint the ducts: duct, fan cradle, mounting arm and
+  LED channel drawn as a single part, not the adapter stuck onto the original duct. It keeps the original's rails,
+  height slot and air channel, so it mounts and aims the air the same way.
 - **25 → 30 mm fan adapter** so the 2510 hotend fan of an Anycubic Kobra X fits Locos3D's 30 mm fan clamp.
 
 | Normal | Flat |
 |---|---|
 | ![Normal version, assembled](screenshots/assembly_normal.png) | ![Flat version, assembled](screenshots/assembly_flat.png) |
+| **One-piece, normal** | **One-piece, flat** |
+| ![One-piece ducts, normal version, assembled](screenshots/assembly_onepiece.png) | ![One-piece ducts, flat version, assembled](screenshots/assembly_onepiece_flat.png) |
 
 ## Downloads
 
-All files are oriented for printing. Right and left parts are mirror images.
+All files are oriented for printing and **none of them needs supports**: every overhang is 45° or steeper and
+the few flat ceilings left are short bridges between two walls. Right and left parts are mirror images.
 
 | | Part | Download | Printing |
 |---|---|---|---|
-| ![](screenshots/part_adapter_4010.png) | 4010 adapter, normal | [right](cad-studio/export/Adapter_4010_right.stl) · [left](cad-studio/export/Adapter_4010_left.stl) | Nozzle down, supports from the build plate |
+| ![](screenshots/part_adapter_4010.png) | 4010 adapter, normal | [right](cad-studio/export/Adapter_4010_right.stl) · [left](cad-studio/export/Adapter_4010_left.stl) | Nozzle down, no supports |
 | ![](screenshots/part_adapter_4010_flat.png) | 4010 adapter, flat | [right](cad-studio/export/Adapter_4010_flat_right.stl) · [left](cad-studio/export/Adapter_4010_flat_left.stl) | Upside down, no supports |
 | ![](screenshots/part_led_mount.png) | LED mount for the original duct | [right](cad-studio/export/LED_mount_right.stl) · [left](cad-studio/export/LED_mount_left.stl) | No supports |
-| ![](screenshots/part_duct_4010_led.png) | One-piece duct with LED channel, normal | [right](cad-studio/export/Duct_4010_LED_right.stl) · [left](cad-studio/export/Duct_4010_LED_left.stl) | On its flat back face |
-| ![](screenshots/part_duct_4010_led_flat.png) | One-piece duct with LED channel, flat | [right](cad-studio/export/Duct_4010_LED_flat_right.stl) · [left](cad-studio/export/Duct_4010_LED_flat_left.stl) | On its flat back face, supports under the front wall of the fan cradle |
+| ![](screenshots/part_duct_4010_led.png) | One-piece duct with LED channel, normal | [right](cad-studio/export/Duct_4010_LED_right.stl) · [left](cad-studio/export/Duct_4010_LED_left.stl) | On its flat back face, no supports |
+| ![](screenshots/part_duct_4010_led_flat.png) | One-piece duct with LED channel, flat | [right](cad-studio/export/Duct_4010_LED_flat_right.stl) · [left](cad-studio/export/Duct_4010_LED_flat_left.stl) | On its flat back face, no supports (the low front wall of the cradle prints as a bridge) |
 | ![](screenshots/part_fan_adapter_2510_30.png) | 2510 fan to the 30 mm fan clamp | [download](cad-studio/export/Fan_adapter_2510_30mm.stl) | Fan side down, no supports |
 
 Assembly notes:

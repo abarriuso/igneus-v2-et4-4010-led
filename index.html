@@ -25,7 +25,7 @@
   .btn:hover { text-decoration: none; filter: brightness(1.08); }
   .viz { margin-top: 26px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
   .viz-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
-  .tabs { display: flex; gap: 6px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
   .tabs button { background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; font: inherit; cursor: pointer; }
   .tabs button.on { background: var(--accent); border-color: var(--accent); color: #1a1205; font-weight: 600; }
   .viz-cap { color: var(--muted); font-size: 14px; flex: 1 1 240px; }
@@ -65,7 +65,7 @@
 
   <div class="viz">
     <div class="viz-bar">
-      <div class="tabs" role="tablist"><button role="tab" data-v="normal" class="on">Normal</button><button role="tab" data-v="flat">Flat</button></div>
+      <div class="tabs" role="tablist"><button role="tab" data-v="normal" class="on">Normal</button><button role="tab" data-v="flat">Flat</button><button role="tab" data-v="onepiece">One-piece</button><button role="tab" data-v="onepiece_flat">One-piece flat</button></div>
       <div class="viz-cap" id="vizcap">Drag to rotate, scroll or pinch to zoom. Replay the assembly or switch the fans and LEDs on and off.</div>
       <a href="visualizer/" id="vizfull">Full screen ↗</a>
     </div>
@@ -82,27 +82,29 @@
   <h2>What this remix adds</h2>
   <ul>
     <li><strong>4010 adapter</strong> to fit the Ender 3's stock 4010 blowers to the original 5015 ducts, in two versions:
-      <strong>normal</strong> (the blower in the original position, held by its mounting screw) and <strong>flat</strong>
+      <strong>normal</strong> (the blower standing in the original position, push-fitted in the cradle; the adapter plugs into the duct and is screwed to its ear) and <strong>flat</strong>
       (the blower on top with its intake facing the front, like the hotend fan; the adapter is only 15 mm tall, so the blowers sit low).</li>
     <li><strong>LED mount</strong> that fits on the inside of each original duct, held with a zip tie, and aims two LEDs of a
       24 V LED strip with one lensed LED per segment, like the light strips sold for the Bambu Lab A1, at the nozzle.</li>
-    <li><strong>One-piece duct</strong> with the 4010 adapter and the LED channel built in, in both versions, if you prefer to reprint the ducts.</li>
+    <li><strong>One-piece duct</strong>, in both versions, if you prefer to reprint the ducts: duct, fan cradle, mounting arm and LED channel drawn as a single part, not the adapter stuck onto the original duct. It keeps the original's rails, height slot and air channel, so it mounts and aims the air the same way.</li>
     <li><strong>25 → 30 mm fan adapter</strong> so the 2510 hotend fan of an Anycubic Kobra X fits Locos3D's 30 mm fan clamp.</li>
   </ul>
 
   <div class="two" style="margin-top: 22px">
     <div class="card"><img src="screenshots/assembly_normal.png" alt="Normal version, assembled" loading="lazy"><h3>Normal</h3></div>
     <div class="card"><img src="screenshots/assembly_flat.png" alt="Flat version, assembled" loading="lazy"><h3>Flat</h3></div>
+    <div class="card"><img src="screenshots/assembly_onepiece.png" alt="One-piece ducts, normal version, assembled" loading="lazy"><h3>One-piece, normal</h3></div>
+    <div class="card"><img src="screenshots/assembly_onepiece_flat.png" alt="One-piece ducts, flat version, assembled" loading="lazy"><h3>One-piece, flat</h3></div>
   </div>
 
   <h2 id="downloads">Downloads</h2>
-  <p class="lead">All files are oriented for printing. Right and left parts are mirror images. To enter your own
+  <p class="lead">All files are oriented for printing and none of them needs supports: every overhang is 45° or steeper and the few flat ceilings left are short bridges between two walls. Right and left parts are mirror images. To enter your own
     measurements (fan, LED strip, clearances) use the <a href="generator/">part generator</a>.</p>
   <div class="parts">
     <div class="card part"><img src="screenshots/part_adapter_4010.png" alt="4010 adapter, normal" loading="lazy">
       <h3>4010 adapter, normal</h3>
       <div class="dl"><a href="cad-studio/export/Adapter_4010_right.stl" download>Right</a> · <a href="cad-studio/export/Adapter_4010_left.stl" download>Left</a></div>
-      <p class="how">Nozzle down, supports from the build plate.</p></div>
+      <p class="how">Nozzle down, no supports.</p></div>
     <div class="card part"><img src="screenshots/part_adapter_4010_flat.png" alt="4010 adapter, flat" loading="lazy">
       <h3>4010 adapter, flat</h3>
       <div class="dl"><a href="cad-studio/export/Adapter_4010_flat_right.stl" download>Right</a> · <a href="cad-studio/export/Adapter_4010_flat_left.stl" download>Left</a></div>
@@ -114,11 +116,11 @@
     <div class="card part"><img src="screenshots/part_duct_4010_led.png" alt="One-piece duct, normal" loading="lazy">
       <h3>One-piece duct with LED channel, normal</h3>
       <div class="dl"><a href="cad-studio/export/Duct_4010_LED_right.stl" download>Right</a> · <a href="cad-studio/export/Duct_4010_LED_left.stl" download>Left</a></div>
-      <p class="how">On its flat back face.</p></div>
+      <p class="how">On its flat back face, no supports.</p></div>
     <div class="card part"><img src="screenshots/part_duct_4010_led_flat.png" alt="One-piece duct, flat" loading="lazy">
       <h3>One-piece duct with LED channel, flat</h3>
       <div class="dl"><a href="cad-studio/export/Duct_4010_LED_flat_right.stl" download>Right</a> · <a href="cad-studio/export/Duct_4010_LED_flat_left.stl" download>Left</a></div>
-      <p class="how">On its flat back face, supports under the front wall of the fan cradle.</p></div>
+      <p class="how">On its flat back face, no supports (the low front wall of the cradle prints as a bridge).</p></div>
     <div class="card part"><img src="screenshots/part_fan_adapter_2510_30.png" alt="2510 to 30 mm fan adapter" loading="lazy">
       <h3>2510 fan to the 30 mm fan clamp</h3>
       <div class="dl"><a href="cad-studio/export/Fan_adapter_2510_30mm.stl" download>Download</a></div>
@@ -149,7 +151,7 @@
   </footer>
 </div>
 <script>
-  // switch the embedded visualizer between the two versions
+  // switch the embedded visualizer between the versions
   document.querySelector('.viz .tabs').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
     const v = b.dataset.v;
