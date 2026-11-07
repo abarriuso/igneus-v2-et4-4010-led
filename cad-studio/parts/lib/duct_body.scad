@@ -6,7 +6,8 @@
 // Drawn from scratch as a single part: the curves of the air channel, the rails of the mounting arm and its
 // height slot are measured from Locos3D's 5015 duct, so it mounts and aims the air like the original.
 // It prints lying on its flat back face (y = 0) without supports: every wall is a prism standing on that
-// face or rises at 45 degrees, and what is left as a ceiling is a short bridge.
+// face or rises at 45 degrees, and what is left as a ceiling is a short bridge. The edges are rounded by
+// stacking offset copies of the front and side profiles (soft()), which only ever narrow away from the bed.
 
 /* [Internal: one-piece duct body] */
 // air channel in the XZ plane: inner wall (nozzle side) and outer wall, both arcs ending in the outlet
@@ -33,13 +34,51 @@ rails      = [[0, 1.98], [6.58, 8.56]];   // rail bases (depth from the back fac
 slot_y     = -4.28;              // height slot: centre (Y), width and the Z range of the screw
 slot_w     = 3.3;
 slot_z     = [9.09, 25.33];
-spine_top  = 5.5;                // the block that joins arm and duct stays under the screw head
+spine_top  = 5.0;                // the block that joins arm and duct stays under the screw head
+
+/* [Internal: shape] */
+soft_r     = 2.0;                // rounding of the edges between the faces seen from the front and from the side
+soft_n     = 16;                 // steps of that rounding
 
 // derived: straight faces of the walls
 near_out_x = ch_near_c[0] + ch_near_r[0];   // -4.31
 near_in_x  = ch_near_c[0] + ch_near_r[1];   // -2.80
 far_in_x   = ch_far_c[0] + ch_far_r[0];     // 12.48
 far_out_x  = ch_far_c[0] + ch_far_r[1];     // 13.98
+
+// ---------- shaping tools ----------
+// 2D: round the convex corners / fillet the concave corners of the children
+module rnd(r) offset(r = r) offset(delta = -r) children();
+module fil(r) offset(r = -r) offset(delta = r) children();
+
+// Polygon with a radius per corner: points [x, y] or [x, y, r]
+function _u(v) = v / norm(v);
+function _corner(p0, p1, p2, r, n = 10) = r <= 0 ? [p1] : let(
+        a = _u(p0 - p1), b = _u(p2 - p1), th = acos(max(-1, min(1, a * b))),
+        c = p1 + _u(a + b) * r / sin(th / 2),
+        s = p1 + a * r / tan(th / 2), e = p1 + b * r / tan(th / 2),
+        a0 = atan2(s[1] - c[1], s[0] - c[0]), a1 = atan2(e[1] - c[1], e[0] - c[0]),
+        da = (a1 - a0 + 540) % 360 - 180)
+    [for (i = [0 : n]) c + r * [cos(a0 + da * i / n), sin(a0 + da * i / n)]];
+function _xy(p) = [p[0], p[1]];
+function rpoly(p) = [for (i = [0 : len(p) - 1]) each _corner(_xy(p[(i + len(p) - 1) % len(p)]), _xy(p[i]),
+                                                              _xy(p[(i + 1) % len(p)]), len(p[i]) > 2 ? p[i][2] : 0)];
+
+// 3D: the solid seen as child 0 from the front (XZ profile) and as child 1 from the side (YZ profile, as
+// [y, z]), with every edge between a front-view face and a side-view face rounded by r
+module soft_raw(r = soft_r, n = soft_n) union() for (i = [0 : n]) {
+    a = 90 * i / n;
+    intersection() {
+        rotate([90, 0, 0]) translate([0, 0, -5]) linear_extrude(height = 200) offset(delta = -r * (1 - cos(a))) children(0);
+        rotate([90, 0, 90]) translate([0, 0, -100]) linear_extrude(height = 200) offset(delta = -r * (1 - sin(a))) children(1);
+    }
+}
+// ...and with the back face (y = 0, the one it prints on) left flat and sharp: the side profile has to reach
+// behind it, past y = r
+module soft(r = soft_r, n = soft_n) intersection() {
+    soft_raw(r, n) { children(0); children(1); }
+    translate([-150, -150, -150]) cube([300, 150, 300]);
+}
 
 function pol(c, r, a) = [c[0] + r * cos(a), c[1] + r * sin(a)];
 function lerp(a, b, t) = a + (b - a) * t;
@@ -100,24 +139,29 @@ module arm_profile() {
     polygon(concat([[arm_x[1], 0], [arm_x[1], -arm_d], [arm_x[0], -arm_d]], [for (i = [len(teeth) - 1 : -1 : 0]) teeth[i]]));
 }
 
+// Arm and spine seen from the front (XZ): the arm column (drawn out past the rails, which the XY profile
+// trims), and the spine that sweeps from under the arm to the inner wall of the duct, with fillets into the
+// arm (under the screw head) and into the duct wall. It reaches 1.5 mm into the duct wall so they blend.
+module arm_xz(top = spine_top) {
+    z0 = duct_top + 2.2;   // the underside runs at 45° from the arm and sweeps into the duct wall
+    polygon(rpoly([[-16, z0 + (arm_x[0] + 16)], [near_out_x, z0 - (near_out_x - arm_x[0]), 6],
+                   [near_out_x, ch_near_c[1]], [near_out_x + 1.5, ch_near_c[1]], [near_out_x + 1.5, top],
+                   [arm_x[1], top, 2], [arm_x[1], arm_top + 5], [-16, arm_top + 5]]));
+}
+// ...and from the side (YZ): the full depth of the arm, its top front corner well rounded
+module arm_yz() polygon(rpoly([[-arm_d, -40], [2, -40], [2, arm_top], [-arm_d, arm_top, 5]]));
+
 // Mounting arm: the rails slide into the grooves on the side of the Igneus body and the M3 screw goes through
-// the height slot into the body. The spine joins it to the duct, below the screw head.
-module mount_arm() {
-    difference() {
+// the height slot into the body. The spine joins it to the duct, below the screw head (its top at `top`).
+module mount_arm(top = spine_top) difference() {
+    intersection() {
+        soft() { arm_xz(top); arm_yz(); }
         union() {
-            intersection() {
-                translate([0, 0, -2]) linear_extrude(height = arm_top + 2) arm_profile();
-                // round the top front corner (the back corner stays square: it sits on the bed)
-                rotate([90, 0, 90]) translate([0, 0, -20]) linear_extrude(height = 20)
-                    offset(r = 3) offset(delta = -3) translate([-arm_d, -10]) square([arm_d + 3, arm_top + 10]);
-            }
-            // spine: from the arm to the inner wall of the duct, chamfered under the arm
-            rotate([90, 0, 0]) linear_extrude(height = arm_d)
-                polygon([[arm_x[0], spine_top], [near_out_x, spine_top], [near_out_x, duct_top - 4.1],
-                         [near_out_x - 2.2, duct_top - 4.1], [arm_x[0], duct_top + 2.2]]);
+            translate([0, 0, -2]) linear_extrude(height = arm_top + 10) arm_profile();   // rails
+            translate([arm_x[0], -50, -60]) cube([40, 60, 120]);                         // arm and spine
         }
-        slot();
     }
+    slot();
 }
 
 module slot()

@@ -21,8 +21,8 @@ licensed under [Creative Commons BY-NC-SA 4.0](https://creativecommons.org/licen
 - **LED mount** that fits on the inside of each original duct, held with a zip tie, and aims two LEDs of a
   24 V LED strip with one lensed LED per segment, like the light strips sold for the Bambu Lab A1, at the nozzle.
 - **One-piece duct**, in both versions, if you prefer to reprint the ducts: duct, fan cradle, mounting arm and
-  LED channel drawn as a single part, not the adapter stuck onto the original duct. It keeps the original's rails,
-  height slot and air channel, so it mounts and aims the air the same way.
+  LED channel drawn as a single part with rounded, flowing lines, not the adapter stuck onto the original duct.
+  It keeps the original's rails, height slot and air channel, so it mounts and aims the air the same way.
 - **25 → 30 mm fan adapter** so the 2510 hotend fan of an Anycubic Kobra X fits Locos3D's 30 mm fan clamp.
 
 | Normal | Flat |
@@ -30,6 +30,8 @@ licensed under [Creative Commons BY-NC-SA 4.0](https://creativecommons.org/licen
 | ![Normal version, assembled](screenshots/assembly_normal.png) | ![Flat version, assembled](screenshots/assembly_flat.png) |
 | **One-piece, normal** | **One-piece, flat** |
 | ![One-piece ducts, normal version, assembled](screenshots/assembly_onepiece.png) | ![One-piece ducts, flat version, assembled](screenshots/assembly_onepiece_flat.png) |
+
+Renders made in Blender from the CAD models (`cad-studio/tools/render_site.py`).
 
 ## Downloads
 

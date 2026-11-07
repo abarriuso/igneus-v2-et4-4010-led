@@ -66,38 +66,46 @@ module adapter4010_flat()
         flat_pocket();
     }
 
-// One-piece duct, flat version: duct, floor, cradle and mounting arm drawn as one part, with the LED channel.
-// Prints lying on its flat back face without supports; the low front wall of the cradle is a bridge between
-// the two end walls.
-module duct4010_flat() {
-    cx = [near_out_x, flat_cradle_x[1]];   cy = flat_cradle_y;   // the inner end wall reaches the duct's wall
+// One-piece duct, flat version. Front view (XZ): the duct, and the tray that carries the blower sweeping out
+// of the duct's outer wall on a fillet, its ends rounded
+module flat_body_xz() {
     zt = flat_z_seat + flat_cradle_h;
-    px0 = flat_fan_x0 - clearance;
-    back = cy[1] - cradle_wall;          // back wall of the cradle, behind the fan
+    duct_outline(flat_z_seat);
+    polygon(rpoly([[near_out_x, ch_far_c[1]], [far_out_x, ch_far_c[1]], [far_out_x, duct_top, 4.5],
+                   [flat_cradle_x[1], duct_top, 5], [flat_cradle_x[1], zt, 3], [near_out_x, zt, 1.5]]));
+}
+// Side view (YZ, as [y, z]): the tray stands on the floor over the duct, set back from its front on a rounded
+// step, and runs back to the back face
+module flat_body_yz() {
+    zt = flat_z_seat + flat_cradle_h;
+    polygon(rpoly([[2, -60], [2, zt + 5], [flat_cradle_y[0], zt + 5], [flat_cradle_y[0], flat_z_seat, 3.5],
+                   [-duct_d, flat_z_seat, 2.5], [-duct_d, -60]]));
+}
+// The front wall of the cradle is cut down to flat_front_h between the end walls, below the blower's intake,
+// its top front edge rounded
+module flat_front_notch() {
+    px = [flat_fan_x0 - clearance, flat_fan_x0 + fan_w + clearance];
+    zf = flat_z_seat + min(flat_front_h, flat_cradle_h);
+    y0 = flat_cradle_y[0];   y1 = flat_fan_y0 - clearance + eps;
+    translate([px[0], 0, 0]) rotate([90, 0, 90]) linear_extrude(height = px[1] - px[0])
+        polygon(rpoly([[y1, zf], [y0, zf, 1.5], [y0, zf - 5], [y0 - 5, zf - 5], [y0 - 5, zf + 30], [y1, zf + 30]]));
+}
+
+// Duct, floor, cradle and mounting arm drawn as one part, with the LED channel. Prints lying on its flat back
+// face without supports; the low front wall of the cradle is a bridge between the two end walls.
+module duct4010_flat() {
     ox = flat_out_x();   oy = flat_out_y();
     plenum = [sec([ox[0], flat_z_seat + 0.5], [ox[1], flat_z_seat + 0.5], oy[1], oy[0], 0),
               sec([ox[0], flat_z_seat], [ox[1], flat_z_seat], oy[1], oy[0], 0)];
     difference() {
         union() {
-            duct_shell(duct_top);
-            // floor: over the duct and under the whole cradle
-            translate([near_out_x, -duct_d, duct_top - eps]) cube([far_out_x - near_out_x, duct_d, flat_floor + eps]);
-            translate([cx[0], cy[0], duct_top - eps]) cube([cx[1] - cx[0], -cy[0], flat_floor + eps]);
-            // cradle walls: low front wall, full-height end walls and back wall
-            translate([cx[0], cy[0], flat_z_seat - eps]) cube([cx[1] - cx[0], cy[1] - cy[0], min(flat_front_h, flat_cradle_h) + eps]);
-            for (w = [[cx[0], px0], [cx[1] - cradle_wall, cx[1]]])
-                translate([w[0], cy[0], flat_z_seat - eps]) cube([w[1] - w[0], cy[1] - cy[0], zt - flat_z_seat + eps]);
-            translate([cx[0], back, flat_z_seat - eps]) cube([cx[1] - cx[0], cy[1] - back, zt - flat_z_seat + eps]);
-            // behind the cradle, down to the back face at 45°
-            hull() {
-                translate([cx[0], cy[1] - eps, duct_top]) cube([cx[1] - cx[0], eps, zt - duct_top]);
-                translate([cx[0], -eps, duct_top]) cube([cx[1] - cx[0] + cy[1], eps, zt - duct_top + cy[1]]);
-            }
-            mount_arm();
+            soft() { flat_body_xz(); flat_body_yz(); }   // duct, floor and cradle in one piece, every edge rounded
+            mount_arm(flat_z_seat + flat_cradle_h);     // the spine flush with the top of the cradle
             if (led) led_channel();
         }
         loft(concat(plenum, duct_secs()));
         flat_pocket();
+        flat_front_notch();
         slot();
     }
 }

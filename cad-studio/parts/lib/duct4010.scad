@@ -196,12 +196,24 @@ module adapter4010() {
 // Prints lying on its flat back face without supports.
 cradle_cut = 1.8;   // the back edge of the cradle is chamfered at 45° from here (keeps the hex key of the
                     // height screw clear and lets the cradle rise from the bed)
-module duct4010() {
-    px = pocket_x();   py = pocket_y();
-    cx = [px[0] - cradle_wall, px[1] + cradle_wall];
+// Front view (XZ): the walls of the duct carry straight on up to the top of the cradle, its corners rounded
+// (a thicker fan widens the cradle past them)
+module body_xz() {
     zf = z_seat - cradle_floor;   zt = z_seat + cradle_h;
-    y_front = py[0] - cradle_wall;
-    neck = zf - 2.2;                                   // the duct walls step in to the cradle above here
+    cx = [min(near_out_x, pocket_x()[0] - cradle_wall), max(far_out_x, pocket_x()[1] + cradle_wall)];
+    duct_outline(zf);
+    polygon(rpoly([[cx[0], zf - 1], [cx[1], zf - 1], [cx[1], zt, 4], [cx[0], zt, 2]]));
+}
+// Side view (YZ, as [y, z]): the duct, and the cradle running out in front of it on a wide fillet; its back
+// edge comes down at 45° to the back face (hex key) and its front end is rounded
+module body_yz() {
+    zf = z_seat - cradle_floor;   zt = z_seat + cradle_h;
+    y_front = pocket_y()[0] - cradle_wall;
+    polygon(rpoly([[2, -60], [2, cradle_cut - 2], [cradle_cut - zt - 5, zt + 5], [y_front, zt + 5],
+                   [y_front, zf, 3], [-duct_d, zf, 10], [-duct_d, -60]]));
+}
+module duct4010() {
+    zf = z_seat - cradle_floor;
     ox = outlet_x();   oy = outlet_y();
     // air path from the blower outlet down to the duct
     t = (-1 - duct_top) / (zf - duct_top);
@@ -211,19 +223,7 @@ module duct4010() {
         sec([lerp(near_in_x, ox[0], t), -1], [lerp(far_in_x, ox[1], t), -1], lerp(ch_back, oy[1], t), ch_front - 0.5)];
     difference() {
         union() {
-            duct_shell(neck);
-            // the walls step in to the cradle at 45°
-            hull() for (s = [[[near_out_x, far_out_x], neck - eps], [cx, zf]])
-                translate([s[0][0], -duct_d, s[1]]) cube([s[0][1] - s[0][0], duct_d, eps]);
-            // gusset under the part of the cradle that overhangs the front of the duct
-            translate([cx[0], 0, 0]) rotate([90, 0, 90]) linear_extrude(height = cx[1] - cx[0])
-                polygon([[-duct_d + 1, -1], [-duct_d, -1], [-duct_d - (zf + 1), zf + eps], [-duct_d + 1, zf + eps]]);
-            // cradle, its back edge chamfered at 45° down to the back face
-            intersection() {
-                translate([cx[0], y_front, zf]) cube([cx[1] - cx[0], -y_front, zt - zf]);
-                translate([cx[0] - 1, 0, 0]) rotate([90, 0, 90]) linear_extrude(height = cx[1] - cx[0] + 2)
-                    polygon([[0, cradle_cut], [-60, cradle_cut + 60], [-60, -10], [0, -10]]);
-            }
+            soft() { body_xz(); body_yz(); }   // duct and cradle in one piece, every edge rounded
             mount_arm();
             if (led) led_channel();
         }
