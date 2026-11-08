@@ -47,12 +47,40 @@ the few flat ceilings left are short bridges between two walls. Right and left p
 | ![](screenshots/part_duct_4010_led_flat.png) | One-piece duct with LED channel, flat | [right](cad-studio/export/Duct_4010_LED_flat_right.stl) · [left](cad-studio/export/Duct_4010_LED_flat_left.stl) | On its flat back face, no supports (the low front wall of the cradle prints as a bridge) |
 | ![](screenshots/part_fan_adapter_2510_30.png) | 2510 fan to the 30 mm fan clamp | [download](cad-studio/export/Fan_adapter_2510_30mm.stl) | Fan side down, no supports |
 
-Assembly notes:
+## Printing
 
+- **Material: PETG, ASA or ABS.** The ducts and adapters end a few millimetres from the heater block and the hot
+  nozzle: PLA softens there and the ducts sag.
+- **Settings** that suit these parts: 0.4 mm nozzle, 0.2 mm layers, 3–4 walls, 20–40 % infill. The duct walls are
+  1.5–3 mm thick, so with 3–4 walls they print solid.
+- **No supports**, in the orientation of the files.
+- **Brim** on the two tall, narrow parts: the normal 4010 adapter (51 mm tall, standing on its nozzle) and the
+  LED mount (39 mm tall on a 12 × 13 mm footprint).
+
+## Hardware
+
+Per side (right and left), depending on the version you build:
+
+| Part | Hardware |
+|---|---|
+| Every version | 4010 blower, 24 V (the Ender 3's stock part-cooling fan) |
+| Original or one-piece duct | M3 × 14 socket head screw and M3 nut, through the height slot into the body's nut pocket |
+| 4010 adapter, normal | M3 × 10 countersunk screw and M3 nut, through the adapter's arm and the duct's ear. The blower is push-fitted in the cradle, no screws |
+| 4010 adapter, flat | None: the cradle holds the blower |
+| LED mount | A small zip tie, up to 3.2 mm wide and 1.4 mm thick |
+| LEDs | 2 LEDs of a 24 V strip with one lensed LED per segment (10 mm wide, cut marks 18.1 mm apart) |
+
+For the **2510 fan adapter** (one, on the front clamp): the clamp's two M3 screws, about **4 mm longer** than without
+it (M3 × 24 in place of M3 × 20), and 4 self-tapping **M2.5 × 12** screws for the fan.
+
+## Assembly notes
+
+- **Blowers**: wire both 4010 blowers in parallel to the printer's part-cooling fan output, so they always run at
+  the same speed.
 - **LEDs**: on this kind of strip each LED is its own segment. Cut it at the marks, two LEDs per side, and wire both
   pieces in parallel to 24 V.
-- **2510 fan adapter**: it is held by the clamp's own two M3 screws, which need to be about **4 mm longer**, and the
-  fan is fixed with 4 self-tapping M2.5 screws.
+- **2510 fan adapter**: it is held by the clamp's own two M3 screws, and the fan is fixed to it with the 4 self-tapping
+  M2.5 screws.
 
 ![2510 fan adapter](screenshots/fan_adapter_2510_30.png)
 
@@ -67,8 +95,24 @@ Everything else is Locos3D's original Igneus V2: **[download it from Thingiverse
 | `Abrazadera_Adapter_Fan_30mm.stl` | 1 | Front clamp with the 30 mm fan mount |
 | `Tobera_5015_V2.stl` | 2 | 5015 duct, one of them mirrored for the left side (not needed with the one-piece ducts) |
 
+## Rebuilding the files
+
+The parts are OpenSCAD sources in `cad-studio/parts/` (libraries in `parts/lib/`), and everything published is
+generated from them.
+
+1. Install [OpenSCAD](https://openscad.org/) and Python 3 with `numpy` (plus `trimesh`, `Pillow` and Blender, only
+   for the renders).
+2. Download Locos3D's Igneus V2 pack, copy the three files listed in [`cad-studio/igneus/README.md`](cad-studio/igneus/README.md)
+   into that folder and run `python tools/place_originals.py` from `cad-studio/`.
+3. From `cad-studio/`, run `python tools/build_all.py`. It builds every part, then refreshes the print-ready STLs in
+   `export/` and the visualizer pages in `visualizer/`. A file is only rewritten when its geometry changed, so
+   rebuilding unchanged sources leaves git clean. Add `--renders` to re-render `screenshots/` in Blender.
+
+While you edit, `python server.py` (in `cad-studio/`) serves a live viewer at http://localhost:8765 that rebuilds
+each part when you save it.
+
 ## License
 
 Remix of IGNEUS V2 by [Locos3D](https://www.thingiverse.com/thing:4178590), shared under
 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): credit Locos3D, non-commercial use only,
-and share any derivative under the same license.
+and share any derivative under the same license. The full license text is in [LICENSE](LICENSE).
